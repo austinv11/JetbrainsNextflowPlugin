@@ -12,6 +12,12 @@
 
     <extensions defaultExtensionNs="com.intellij">
         <fileType name="Nextflow" language="Groovy" implementationClass="com.austinv11.nextflow.NextflowFileType" fieldName="INSTANCE" extensions="nf" fileNames="nextflow.config"/>
+
+        <projectConfigurable
+                groupId="tools"
+                displayName="Nextflow"
+                id="com.austinv11.nextflow.settings"
+                instance="com.austinv11.nextflow.NextflowSettingsConfigurable"/>
     </extensions>
 
     <extensions defaultExtensionNs="org.intellij.groovy">

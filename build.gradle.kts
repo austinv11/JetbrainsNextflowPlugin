@@ -1,3 +1,6 @@
+import java.net.HttpURLConnection
+import java.net.URL
+
 plugins {
     id("java")
     id("org.jetbrains.kotlin.jvm") version "2.3.0"
@@ -53,4 +56,31 @@ tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
 
 tasks.test {
     useJUnitPlatform()
+}
+
+val downloadMermaid by tasks.registering {
+    val outputDir = layout.projectDirectory.dir("src/main/resources/mermaid")
+    val outputFile = outputDir.file("mermaid.min.js")
+    outputs.file(outputFile)
+    doLast {
+        outputDir.asFile.mkdirs()
+        val url = URL("https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js")
+        val connection = (url.openConnection() as HttpURLConnection).apply {
+            setRequestProperty("Accept", "text/javascript,application/javascript")
+            setRequestProperty("Accept-Encoding", "identity")
+            connectTimeout = 15000
+            readTimeout = 15000
+        }
+
+        val bytes = connection.inputStream.use { input -> input.readBytes() }
+        val textStart = bytes.take(256).toByteArray().toString(Charsets.UTF_8).trimStart()
+        if (textStart.startsWith("<")) {
+            error("Downloaded Mermaid JS looks like HTML. Check CDN availability.")
+        }
+        outputFile.asFile.writeBytes(bytes)
+    }
+}
+
+tasks.named<ProcessResources>("processResources") {
+    dependsOn(downloadMermaid)
 }

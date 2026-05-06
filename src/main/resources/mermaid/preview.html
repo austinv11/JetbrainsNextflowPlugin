@@ -1,0 +1,267 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <style>
+      :root {
+        color-scheme: light dark;
+        --bg: #ffffff;
+        --fg: #111111;
+        --muted: #6b6b6b;
+        --border: #e0e0e0;
+      }
+      [data-theme="dark"] {
+        --bg: #1f1f1f;
+        --fg: #e7e7e7;
+        --muted: #b5b5b5;
+        --border: #333333;
+      }
+      html, body { height: 100%; margin: 0; }
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        background: var(--bg);
+        color: var(--fg);
+      }
+      #toolbar {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 12px;
+        border-bottom: 1px solid var(--border);
+      }
+      #toolbar button {
+        border: 1px solid var(--border);
+        background: transparent;
+        color: var(--fg);
+        padding: 4px 10px;
+        border-radius: 6px;
+        cursor: pointer;
+      }
+      #toolbar span { color: var(--muted); font-size: 12px; }
+      #container {
+        padding: 12px 16px 16px;
+        transform-origin: top left;
+        cursor: grab;
+      }
+      #container.dragging { cursor: grabbing; }
+      #container svg { max-width: 100%; height: auto; }
+      #error { color: #b00020; white-space: pre-wrap; padding: 0 16px 16px; }
+    </style>
+  </head>
+  <body>
+    <div id="toolbar">
+      <button id="zoom-out">-</button>
+      <button id="zoom-reset">Reset</button>
+      <button id="zoom-in">+</button>
+      <span id="zoom-label">100%</span>
+    </div>
+    <div id="container">Loading Mermaid preview...</div>
+    <div id="error"></div>
+    <script>
+      console.log('Mermaid preview script start');
+      (function () {
+        const theme = "__IDE_THEME__";
+        document.documentElement.setAttribute('data-theme', theme);
+
+        const getOrCreate = (id) => {
+          let el = document.getElementById(id);
+          if (!el) {
+            el = document.createElement('div');
+            el.id = id;
+            (document.body || document.documentElement).appendChild(el);
+          }
+          return el;
+        };
+
+        const waitForContainer = (attemptsLeft, delayMs, onFound, onMissing) => {
+          const container = getOrCreate('container');
+          if (container) {
+            onFound(container);
+            return;
+          }
+          if (attemptsLeft <= 0) {
+            onMissing();
+            return;
+          }
+          setTimeout(() => waitForContainer(attemptsLeft - 1, delayMs, onFound, onMissing), delayMs);
+        };
+
+        const onReady = (fn) => {
+          if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', fn, { once: true });
+          } else {
+            fn();
+          }
+        };
+
+        onReady(() => {
+          const error = getOrCreate('error');
+          const container = getOrCreate('container');
+          const zoomLabel = document.getElementById('zoom-label');
+          let zoom = 1;
+          let translateX = 0;
+          let translateY = 0;
+          let dragging = false;
+          let dragStartX = 0;
+          let dragStartY = 0;
+
+          const applyTransform = () => {
+            container.style.transform = `translate(${translateX}px, ${translateY}px) scale(${zoom})`;
+            if (zoomLabel) zoomLabel.textContent = `${Math.round(zoom * 100)}%`;
+          };
+
+          container.addEventListener('mousedown', (event) => {
+            dragging = true;
+            container.classList.add('dragging');
+            dragStartX = event.clientX - translateX;
+            dragStartY = event.clientY - translateY;
+          });
+
+          window.addEventListener('mousemove', (event) => {
+            if (!dragging) return;
+            translateX = event.clientX - dragStartX;
+            translateY = event.clientY - dragStartY;
+            applyTransform();
+          });
+
+          window.addEventListener('mouseup', () => {
+            if (!dragging) return;
+            dragging = false;
+            container.classList.remove('dragging');
+          });
+
+          document.getElementById('zoom-in')?.addEventListener('click', () => {
+            zoom = Math.min(3, zoom + 0.1);
+            applyTransform();
+          });
+          document.getElementById('zoom-out')?.addEventListener('click', () => {
+            zoom = Math.max(0.2, zoom - 0.1);
+            applyTransform();
+          });
+          document.getElementById('zoom-reset')?.addEventListener('click', () => {
+            zoom = 1;
+            translateX = 0;
+            translateY = 0;
+            applyTransform();
+          });
+
+          applyTransform();
+
+          waitForContainer(10, 50, () => {
+            container.textContent = 'Inline JS running...';
+            console.log('Inline JS running');
+          }, () => {
+            const msg = 'Container element not found. body=' + (document.body ? 'present' : 'null');
+            if (error) error.textContent = msg;
+            console.log(msg);
+          });
+
+          window.addEventListener('error', (e) => {
+            if (!error) return;
+            error.textContent = 'Script error:\n' + (e && e.message ? e.message : String(e));
+          });
+          window.addEventListener('unhandledrejection', (e) => {
+            if (!error) return;
+            error.textContent = 'Promise rejection:\n' + (e && e.reason ? e.reason : String(e));
+          });
+        });
+      })();
+    </script>
+    <script>
+      (function () {
+        const url = "__MERMAID_URL__";
+        window.__mermaidReady = new Promise((resolve, reject) => {
+          const script = document.createElement('script');
+          script.src = url;
+          script.async = true;
+          script.onload = () => {
+            console.log('Mermaid script loaded:', url);
+            resolve(true);
+          };
+          script.onerror = () => {
+            const error = document.getElementById('error');
+            const msg = 'Mermaid script failed to load: ' + url;
+            if (error) error.textContent = msg;
+            console.log(msg);
+            reject(new Error(msg));
+          };
+          document.head.appendChild(script);
+        });
+      })();
+    </script>
+    <script>
+      (function () {
+        const getOrCreate = (id) => {
+          let el = document.getElementById(id);
+          if (!el) {
+            el = document.createElement('div');
+            el.id = id;
+            (document.body || document.documentElement).appendChild(el);
+          }
+          return el;
+        };
+
+        const waitForMermaid = () => {
+          const ready = window.__mermaidReady;
+          if (ready && typeof ready.then === 'function') {
+            return ready;
+          }
+          return Promise.reject(new Error('Mermaid script promise not initialized.'));
+        };
+
+        const waitForContainer = (attemptsLeft, delayMs, onFound, onMissing) => {
+          const container = getOrCreate('container');
+          if (container) {
+            onFound(container);
+            return;
+          }
+          if (attemptsLeft <= 0) {
+            onMissing();
+            return;
+          }
+          setTimeout(() => waitForContainer(attemptsLeft - 1, delayMs, onFound, onMissing), delayMs);
+        };
+
+        const onReady = (fn) => {
+          if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', fn, { once: true });
+          } else {
+            fn();
+          }
+        };
+
+        onReady(() => {
+          const error = getOrCreate('error');
+          const source = "__MERMAID_TEXT__";
+          const theme = "__IDE_THEME__" === 'dark' ? 'dark' : 'default';
+
+          waitForContainer(10, 50, (container) => {
+            waitForMermaid().then(() => {
+              if (!window.mermaid) {
+                const msg = 'Mermaid global not found after script load.';
+                if (error) error.textContent = msg;
+                console.log(msg);
+                return;
+              }
+              mermaid.initialize({ startOnLoad: false, securityLevel: 'strict', theme });
+              mermaid.render('diagram', source).then(({ svg }) => {
+                container.innerHTML = svg;
+                console.log('Mermaid render complete');
+              }).catch((e) => {
+                if (error) error.textContent = 'Mermaid render failed:\n' + (e && e.message ? e.message : String(e));
+                console.log('Mermaid render failed', e);
+              });
+            }).catch((e) => {
+              if (error) error.textContent = 'Mermaid load failed:\n' + (e && e.message ? e.message : String(e));
+              console.log('Mermaid load failed', e);
+            });
+          }, () => {
+            if (error) error.textContent = 'Container element not found.';
+            console.log('Container element not found for Mermaid');
+          });
+        });
+      })();
+    </script>
+  </body>
+</html>
+
