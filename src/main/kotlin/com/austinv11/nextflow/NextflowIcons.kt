@@ -1,4 +1,9 @@
 package com.austinv11.nextflow
 
-class NextflowIcons {
+import com.intellij.openapi.util.IconLoader
+import javax.swing.Icon
+
+object NextflowIcons {
+    @JvmField
+    val FILE: Icon = IconLoader.getIcon("/icons/nextflow-icon.svg", NextflowIcons::class.java)
 }

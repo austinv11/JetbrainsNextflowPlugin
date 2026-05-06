@@ -1,0 +1,20 @@
+<idea-plugin>
+    <id>com.austinv11.nextflow</id>
+    <name>Nextflow LSP</name>
+    <vendor>austinv11</vendor>
+    <description><![CDATA[
+    Nextflow LSP support for IntelliJ IDEA and PyCharm.
+    ]]></description>
+
+    <depends>com.intellij.modules.platform</depends>
+    <depends>org.intellij.groovy</depends>
+    <depends config-file="lsp.xml">com.intellij.modules.lsp</depends>
+
+    <extensions defaultExtensionNs="com.intellij">
+        <fileType name="Nextflow" language="Groovy" implementationClass="com.austinv11.nextflow.NextflowFileType" fieldName="INSTANCE" extensions="nf" fileNames="nextflow.config"/>
+    </extensions>
+
+    <extensions defaultExtensionNs="org.intellij.groovy">
+        <unresolvedHighlightFileFilter implementation="com.austinv11.nextflow.NextflowUnresolvedHighlightFileFilter"/>
+    </extensions>
+</idea-plugin>
