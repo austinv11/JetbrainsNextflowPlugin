@@ -46,6 +46,20 @@ intellijPlatform {
     }
 }
 
+val cleanGeneratedResources by tasks.registering(Delete::class) {
+    // Only delete the generated file, not the whole directory (preview.html is static).
+    delete(layout.projectDirectory.file("src/main/resources/mermaid/mermaid.min.js"))
+    delete(layout.projectDirectory.dir("src/main/resources/textmate"))
+}
+
+
+tasks.named<org.jetbrains.intellij.platform.gradle.tasks.RunIdeTask>("runIde") {
+    dependsOn(cleanGeneratedResources)
+    jvmArgumentProviders += CommandLineArgumentProvider {
+        listOf("-Didea.is.internal=true")
+    }
+}
+
 tasks.withType<JavaCompile> {
     sourceCompatibility = "21"
     targetCompatibility = "21"
@@ -62,6 +76,7 @@ tasks.test {
 }
 
 val downloadMermaid by tasks.registering {
+    mustRunAfter(cleanGeneratedResources)
     val outputDir = layout.projectDirectory.dir("src/main/resources/mermaid")
     val outputFile = outputDir.file("mermaid.min.js")
     outputs.file(outputFile)
@@ -85,6 +100,7 @@ val downloadMermaid by tasks.registering {
 }
 
 val downloadTextmateBundles by tasks.registering {
+    mustRunAfter(cleanGeneratedResources)
     val outputDir = layout.projectDirectory.dir("src/main/resources/textmate")
 
     // We register the whole directory as the output since the contents are dynamic
@@ -136,6 +152,45 @@ val downloadTextmateBundles by tasks.registering {
             }
         }
 
+        // IntelliJ's TextMate engine doesn't resolve cross-bundle includes (e.g. `include:
+        // "source.nextflow-groovy"`), so merge the Groovy grammar rules directly into the
+        // nextflow and nextflow-config grammars and rewrite all external scope references
+        // to internal #rule references.
+        val groovyGrammarFile = outputDir.dir("syntaxes").file("groovy.tmLanguage.json").asFile
+        if (groovyGrammarFile.exists()) {
+            @Suppress("UNCHECKED_CAST")
+            val groovyGrammar = jsonSlurper.parseText(groovyGrammarFile.readText()) as Map<String, Any>
+            @Suppress("UNCHECKED_CAST")
+            val groovyRepo = groovyGrammar["repository"] as Map<String, Any>
+
+            val includeReplacements = mapOf(
+                "source.nextflow-groovy" to "#groovy",
+                "source.nextflow-groovy#groovy" to "#groovy",
+                "source.nextflow-groovy#groovy-code" to "#groovy-code",
+                "source.nextflow-groovy#parameters" to "#parameters",
+                "source.nextflow-groovy#types" to "#types",
+            )
+
+            for (name in listOf("nextflow.tmLanguage.json", "nextflow-config.tmLanguage.json")) {
+                val grammarFile = outputDir.dir("syntaxes").file(name).asFile
+                if (!grammarFile.exists()) continue
+
+                @Suppress("UNCHECKED_CAST")
+                val grammar = jsonSlurper.parseText(grammarFile.readText()) as MutableMap<String, Any>
+                @Suppress("UNCHECKED_CAST")
+                val repo = (grammar.getOrPut("repository") { mutableMapOf<String, Any>() }) as MutableMap<String, Any>
+                groovyRepo.forEach { (k, v) -> repo[k] = v }
+
+                var text = JsonOutput.toJson(grammar)
+                includeReplacements.forEach { (from, to) ->
+                    text = text.replace("\"$from\"", "\"$to\"")
+                }
+                grammarFile.writeText(text)
+            }
+
+            groovyGrammarFile.delete()
+        }
+
         // Download language-configuration.json to the bundle root so the 'configuration' field
         // in each language entry resolves correctly.
         val langConfigBytes = (URI.create("https://raw.githubusercontent.com/nextflow-io/vscode-language-nextflow/refs/heads/main/language-configuration.json").toURL().openConnection() as HttpURLConnection).apply {
@@ -161,11 +216,14 @@ val downloadTextmateBundles by tasks.registering {
         @Suppress("UNCHECKED_CAST")
         val contributes = canonicalPackageJson["contributes"] as Map<String, Any>
 
-        // Keep grammars as-is — paths like ./syntaxes/foo.json match what we downloaded.
-        val grammars = contributes["grammars"]
+        // Drop the standalone groovy grammar — its rules are now merged into nextflow/nextflow-config.
+        @Suppress("UNCHECKED_CAST")
+        val grammars = (contributes["grammars"] as? List<Map<String, Any>>)
+            ?.filter { it["scopeName"] != "source.nextflow-groovy" }
 
         // Strip only the 'icon' field from language entries (references images we don't ship).
         // 'configuration' is kept — it now resolves to the language-configuration.json we downloaded.
+        // All extensions (.nf, .config) are kept so the TextMate highlighter fires for those files.
         @Suppress("UNCHECKED_CAST")
         val languages = (contributes["languages"] as? List<Map<String, Any>>)?.map { lang ->
             lang.filterKeys { it != "icon" }

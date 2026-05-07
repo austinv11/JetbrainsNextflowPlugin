@@ -6,13 +6,28 @@
     Nextflow LSP support for IntelliJ IDEA and PyCharm.
     ]]></description>
 
-    <depends>com.intellij.modules.platform</depends>
-    <depends>org.intellij.groovy</depends>
-    <depends>org.jetbrains.plugins.textmate</depends>
-    <depends config-file="lsp.xml">com.intellij.modules.lsp</depends>
+    <dependencies>
+        <plugin id="com.intellij.modules.platform"/>
+        <plugin id="org.intellij.groovy"/>
+        <plugin id="org.jetbrains.plugins.textmate"/>
+        <!-- intellij.textmate must be listed explicitly so its module classloader
+             is accessible — required for TextMateBundleProvider to resolve. -->
+        <module name="intellij.textmate"/>
+        <module name="intellij.platform.lsp"/>
+    </dependencies>
 
     <extensions defaultExtensionNs="com.intellij">
-        <fileType name="Nextflow" language="Groovy" implementationClass="com.austinv11.nextflow.NextflowFileType" fieldName="INSTANCE" extensions="nf" fileNames="nextflow.config"/>
+        <fileType name="Nextflow" language="Nextflow" implementationClass="com.austinv11.nextflow.NextflowFileType" fieldName="INSTANCE" extensions="nf" fileNames="nextflow.config"/>
+
+        <!-- Reuse Groovy's commenter and bracket matcher so // comments and brace matching
+             work in .nf files without requiring a full Groovy PSI dialect hierarchy. -->
+        <lang.commenter language="Nextflow" implementationClass="org.jetbrains.plugins.groovy.highlighter.GroovyCommenter"/>
+        <lang.braceMatcher language="Nextflow" implementationClass="org.jetbrains.plugins.groovy.highlighter.GroovyBraceMatcher"/>
+        <lang.quoteHandler language="Nextflow" implementationClass="org.jetbrains.plugins.groovy.editor.GroovyQuoteHandler"/>
+        <lang.syntaxHighlighter language="Nextflow" implementationClass="org.jetbrains.plugins.groovy.highlighter.GroovySyntaxHighlighter"/>
+        <lang.syntaxHighlighterFactory language="Nextflow" implementationClass="org.jetbrains.plugins.groovy.highlighter.GroovySyntaxHighlighterFactory"/>
+
+        <fileTypeOverrider implementation="com.austinv11.nextflow.NextflowFileTypeOverrider"/>
 
         <projectConfigurable
                 groupId="tools"
@@ -21,9 +36,6 @@
                 instance="com.austinv11.nextflow.NextflowSettingsConfigurable"/>
 
         <textmate.bundleProvider implementation="com.austinv11.nextflow.NextflowTextMateBundleProvider"/>
-    </extensions>
-
-    <extensions defaultExtensionNs="org.intellij.groovy">
-        <unresolvedHighlightFileFilter implementation="com.austinv11.nextflow.NextflowUnresolvedHighlightFileFilter"/>
+        <platform.lsp.serverSupportProvider implementation="com.austinv11.nextflow.lsp.NextflowLspServerSupportProvider"/>
     </extensions>
 </idea-plugin>

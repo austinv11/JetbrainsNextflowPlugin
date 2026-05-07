@@ -1,20 +1,17 @@
-package com.austinv11.nextflow
+package com.austinv11.nextflow.lsp
 
 import com.google.gson.JsonParser
 import com.intellij.openapi.application.PathManager
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.util.io.HttpRequests
 import java.io.File
-import java.net.URL
-import java.nio.file.Files
-import java.nio.file.StandardCopyOption
 
 object NextflowLspServerDownloader {
     private val LOG = Logger.getInstance(NextflowLspServerDownloader::class.java)
     private val PLUGIN_DIR = File(PathManager.getPluginsPath(), "jetbrains-nextflow-lsp")
     private val JAR_FILE = File(PLUGIN_DIR, "language-server-all.jar")
     private val VERSION_FILE = File(PLUGIN_DIR, "version.txt")
-    private const val GITHUB_API_LATEST = "https://api.github.com/repos/nextflow-io/language-server/releases/latest"
+    private const val GITHUB_API_LATEST = "https://api.github.com/repos/austinv11/language-server/releases/latest" // "https://api.github.com/repos/nextflow-io/language-server/releases/latest"  FIXME: Using a patched version, switch back to true repo once https://github.com/nextflow-io/language-server/pull/154 is merged and released
 
     fun getOrDownloadLspServer(): File? {
         if (!PLUGIN_DIR.exists()) PLUGIN_DIR.mkdirs()

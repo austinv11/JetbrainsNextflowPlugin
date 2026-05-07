@@ -1,9 +1,11 @@
-package com.austinv11.nextflow
+package com.austinv11.nextflow.lsp
 
+import com.austinv11.nextflow.NextflowIcons
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.platform.lsp.api.LspServer
 import com.intellij.platform.lsp.api.LspServerSupportProvider
+import com.intellij.platform.lsp.api.LspServerSupportProvider.*
 import com.intellij.platform.lsp.api.lsWidget.LspServerWidgetItem
 
 class NextflowLspServerSupportProvider : LspServerSupportProvider {
@@ -11,7 +13,7 @@ class NextflowLspServerSupportProvider : LspServerSupportProvider {
     override fun fileOpened(
         project: Project,
         file: VirtualFile,
-        serverStarter: LspServerSupportProvider.LspServerStarter
+        serverStarter: LspServerStarter
     ) {
         if (file.extension == "nf" || file.name == "nextflow.config") {
             serverStarter.ensureServerStarted(NextflowLspServerDescriptor(project))

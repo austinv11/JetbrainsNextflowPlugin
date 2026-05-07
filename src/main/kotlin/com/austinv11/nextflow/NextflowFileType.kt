@@ -1,10 +1,10 @@
 package com.austinv11.nextflow
 
+import com.intellij.lang.Language
 import com.intellij.openapi.fileTypes.LanguageFileType
-import org.jetbrains.plugins.groovy.GroovyLanguage
 import javax.swing.Icon
 
-class NextflowFileType private constructor() : LanguageFileType(GroovyLanguage) {
+class NextflowFileType private constructor() : LanguageFileType(NextflowLanguage.INSTANCE) {
 
     override fun getName() = "Nextflow"
     override fun getDescription() = "Nextflow pipeline file"
@@ -16,3 +16,10 @@ class NextflowFileType private constructor() : LanguageFileType(GroovyLanguage) 
         val INSTANCE = NextflowFileType()
     }
 }
+
+class NextflowLanguage private constructor() : Language("Nextflow") {
+
+    companion object {
+        @JvmField
+        val INSTANCE = NextflowLanguage()
+    }}

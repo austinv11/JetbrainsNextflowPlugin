@@ -1,9 +1,10 @@
-package com.austinv11.nextflow
+package com.austinv11.nextflow.lsp
 
 import com.google.gson.Gson
 import com.google.gson.internal.LinkedTreeMap
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.diagnostic.Logger
+import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.DialogWrapper
 import com.intellij.openapi.ui.Messages
 import com.intellij.openapi.vfs.VirtualFile
@@ -13,7 +14,6 @@ import com.intellij.ui.JBColor
 import com.intellij.ui.components.JBScrollPane
 import com.intellij.ui.jcef.JBCefApp
 import com.intellij.ui.jcef.JBCefBrowser
-import com.intellij.util.ui.UIUtil
 import org.cef.CefSettings
 import org.cef.browser.CefBrowser
 import org.cef.browser.CefFrame
@@ -27,6 +27,7 @@ import java.nio.file.Files
 import java.nio.file.StandardCopyOption
 import javax.swing.JComponent
 import javax.swing.JTextArea
+import kotlin.collections.get
 
 class NextflowLspCommandsSupport : LspCommandsSupport() {
 
@@ -71,7 +72,7 @@ class NextflowLspCommandsSupport : LspCommandsSupport() {
     }
 }
 
-private class DagPreviewDialog(project: com.intellij.openapi.project.Project, private val mermaidText: String) :
+private class DagPreviewDialog(project: Project, private val mermaidText: String) :
     DialogWrapper(project, false) {
 
     private val logger = Logger.getInstance(DagPreviewDialog::class.java)
