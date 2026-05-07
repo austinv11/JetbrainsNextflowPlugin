@@ -2,19 +2,14 @@ package com.austinv11.nextflow
 
 import com.google.gson.JsonArray
 import com.google.gson.JsonObject
-import com.intellij.execution.ExecutionException
 import com.intellij.execution.configurations.GeneralCommandLine
 import com.intellij.execution.process.OSProcessHandler
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
-import com.intellij.platform.lsp.api.LspServerDescriptor
 import com.intellij.platform.lsp.api.LspServerListener
-import com.intellij.platform.lsp.api.customization.LspCommandsSupport
 import com.intellij.platform.lsp.api.LspServerManager
 import com.intellij.platform.lsp.api.LspServerState
 import com.intellij.platform.lsp.api.ProjectWideLspServerDescriptor
-import java.nio.charset.StandardCharsets
-import org.eclipse.lsp4j.ClientCapabilities
 import org.eclipse.lsp4j.ConfigurationItem
 import org.eclipse.lsp4j.DidChangeConfigurationParams
 import org.eclipse.lsp4j.InitializeResult
@@ -101,6 +96,12 @@ class NextflowLspServerDescriptor(project: Project) : ProjectWideLspServerDescri
         }
     }
 
+    override fun startServerProcess(): OSProcessHandler {
+        val commandLine = createCommandLine()
+        val process = commandLine.createProcess()
+        return NextflowPatchedProcessHandler(process, commandLine.commandLineString)
+    }
+
     override val lspCommandsSupport = NextflowLspCommandsSupport()
 
     override fun equals(other: Any?): Boolean {
@@ -111,9 +112,4 @@ class NextflowLspServerDescriptor(project: Project) : ProjectWideLspServerDescri
 
     override fun hashCode(): Int = project.hashCode()
 
-    override fun startServerProcess(): OSProcessHandler {
-        val commandLine = createCommandLine()
-        val process = commandLine.createProcess()
-        return NextflowPatchedProcessHandler(process, commandLine.commandLineString, StandardCharsets.UTF_8)
-    }
 }

@@ -19,16 +19,13 @@ class LspProgressPatchInputStream(private val input: InputStream) : InputStream(
 
     override fun read(b: ByteArray, off: Int, len: Int): Int {
         if (len == 0) return 0
-        var bytesRead = 0
-        while (bytesRead < len) {
-            val next = read()
-            if (next == -1) {
-                return if (bytesRead == 0) -1 else bytesRead
-            }
-            b[off + bytesRead] = next.toByte()
-            bytesRead++
+        if (offset >= buffer.size) {
+            if (!fillBuffer()) return -1
         }
-        return bytesRead
+        val toRead = minOf(len, buffer.size - offset)
+        System.arraycopy(buffer, offset, b, off, toRead)
+        offset += toRead
+        return toRead
     }
 
     private fun fillBuffer(): Boolean {
@@ -63,11 +60,11 @@ class LspProgressPatchInputStream(private val input: InputStream) : InputStream(
 
         val headerBuilder = StringBuilder()
         headerBuilder.append("Content-Length: ").append(patchedBody.size).append("\r\n")
-        headers.filterNot { it.startsWith("Content-Length", ignoreCase = true) }.forEach { headerBuilder.append(it).append("\r\n") }
+        headers.filterNot { it.startsWith("Content-Length", ignoreCase = true) }
+               .forEach { headerBuilder.append(it).append("\r\n") }
         headerBuilder.append("\r\n")
 
-        val headerBytes = headerBuilder.toString().toByteArray(Charsets.UTF_8)
-        buffer = headerBytes + patchedBody
+        buffer = headerBuilder.toString().toByteArray(Charsets.UTF_8) + patchedBody
         offset = 0
         return true
     }
@@ -84,14 +81,14 @@ class LspProgressPatchInputStream(private val input: InputStream) : InputStream(
     }
 
     private fun readFully(length: Int): ByteArray {
-        val buffer = ByteArray(length)
+        val buf = ByteArray(length)
         var read = 0
         while (read < length) {
-            val r = input.read(buffer, read, length - read)
+            val r = input.read(buf, read, length - read)
             if (r == -1) break
             read += r
         }
-        return if (read == length) buffer else buffer.copyOf(read)
+        return if (read == length) buf else buf.copyOf(read)
     }
 
     private fun patchBody(body: ByteArray): ByteArray {
@@ -108,7 +105,7 @@ class LspProgressPatchInputStream(private val input: InputStream) : InputStream(
         if (value["kind"]?.asString != "begin") return body
 
         if (!value.has("title") || value["title"].isJsonNull) {
-            value.addProperty("title", "Progress")
+            value.addProperty("title", "")
             return root.toString().toByteArray(Charsets.UTF_8)
         }
 

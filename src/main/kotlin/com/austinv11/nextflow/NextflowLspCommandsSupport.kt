@@ -45,13 +45,18 @@ class NextflowLspCommandsSupport : LspCommandsSupport() {
                 val result = server.sendRequestSync { languageServer ->
                     languageServer.workspaceService.executeCommand(
                         ExecuteCommandParams().apply {
-                            this.command = "nextflow.server.previewDag"
+                            this.command = "nextflow.server.previewDag" //Note that there is a weird bug in the LSP, we have to change the command name to get this to work
                             this.arguments = command.arguments
                         }
                     )
                 }
                 ApplicationManager.getApplication().invokeLater {
-                    val diagram = (result as LinkedTreeMap<*, *>)["result"] as? String
+                    val diagram = when (result) {
+                        is String -> result.ifBlank { null }
+                        is LinkedTreeMap<*, *> ->
+                            (result["result"] ?: result["mermaid"] ?: result["dag"]) as? String
+                        else -> null
+                    }
                     when {
                         diagram != null -> DagPreviewDialog(project, diagram).show()
                         else -> Messages.showErrorDialog(project, "Unexpected response from server", "DAG Preview Error")
