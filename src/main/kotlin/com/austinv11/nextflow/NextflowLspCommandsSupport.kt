@@ -9,6 +9,7 @@ import com.intellij.openapi.ui.Messages
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.platform.lsp.api.LspServer
 import com.intellij.platform.lsp.api.customization.LspCommandsSupport
+import com.intellij.ui.JBColor
 import com.intellij.ui.components.JBScrollPane
 import com.intellij.ui.jcef.JBCefApp
 import com.intellij.ui.jcef.JBCefBrowser
@@ -155,7 +156,7 @@ private class DagPreviewDialog(project: com.intellij.openapi.project.Project, pr
     private fun buildMermaidHtml(mermaidText: String, mermaidUrl: String): String {
         val mermaidJson = Gson().toJson(mermaidText)
         val mermaidUrlJson = Gson().toJson(mermaidUrl)
-        val themeJson = Gson().toJson(if (UIUtil.isUnderDarcula()) "dark" else "light")
+        val themeJson = Gson().toJson(if (JBColor.isBright()) "light" else "dark")
         val templateStream = javaClass.getResourceAsStream("/mermaid/preview.html")
             ?: error("Missing /mermaid/preview.html resource")
         val template = templateStream.bufferedReader(Charsets.UTF_8).use { it.readText() }

@@ -72,6 +72,14 @@ class NextflowLspServerDescriptor(project: Project) : ProjectWideLspServerDescri
             })
             addProperty("languageVersion", "26.04")
             addProperty("debug", false)
+            add("completion", JsonObject().apply {
+                addProperty("extended", true)
+                addProperty("maxItems", 50)
+            })
+            add("formatting", JsonObject().apply {
+                addProperty("harshilAlignment", false)
+                addProperty("sortDeclarations", false)
+            })
         }
     }
 
