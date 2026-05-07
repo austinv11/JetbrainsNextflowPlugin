@@ -44,6 +44,13 @@ intellijPlatform {
             sinceBuild = "241.0"
         }
     }
+    publishing {
+        token.set(System.getenv("PUBLISH_TOKEN"))
+    }
+    signing {
+        val signingKey: String? by project
+        val signingPassword: String? by project
+    }
 }
 
 val cleanGeneratedResources by tasks.registering(Delete::class) {

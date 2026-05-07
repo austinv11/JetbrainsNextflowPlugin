@@ -13,6 +13,8 @@ import com.intellij.platform.lsp.api.ProjectWideLspServerDescriptor
 import org.eclipse.lsp4j.ConfigurationItem
 import org.eclipse.lsp4j.DidChangeConfigurationParams
 import org.eclipse.lsp4j.InitializeResult
+import org.eclipse.lsp4j.InitializeParams
+
 import java.io.File
 
 class NextflowLspServerDescriptor(project: Project) : ProjectWideLspServerDescriptor(project, "Nextflow LSP") {
@@ -43,6 +45,28 @@ class NextflowLspServerDescriptor(project: Project) : ProjectWideLspServerDescri
             return buildNextflowConfig()
         }
         return null
+    }
+
+    override fun createInitializeParams(): InitializeParams {
+        val params = super.createInitializeParams()
+        val capabilities = params.capabilities ?: org.eclipse.lsp4j.ClientCapabilities()
+
+        val textDocument = capabilities.textDocument ?: org.eclipse.lsp4j.TextDocumentClientCapabilities()
+        val completion = textDocument.completion ?: org.eclipse.lsp4j.CompletionCapabilities()
+        val completionItem = completion.completionItem ?: org.eclipse.lsp4j.CompletionItemCapabilities()
+        completionItem.snippetSupport = true
+        completion.completionItem = completionItem
+        textDocument.completion = completion
+        capabilities.textDocument = textDocument
+
+        val workspace = capabilities.workspace ?: org.eclipse.lsp4j.WorkspaceClientCapabilities()
+        val watchedFiles = workspace.didChangeWatchedFiles ?: org.eclipse.lsp4j.DidChangeWatchedFilesCapabilities()
+        watchedFiles.dynamicRegistration = true
+        workspace.didChangeWatchedFiles = watchedFiles
+        capabilities.workspace = workspace
+
+        params.capabilities = capabilities
+        return params
     }
 
     override val lspServerListener = object : LspServerListener {
@@ -90,6 +114,7 @@ class NextflowLspServerDescriptor(project: Project) : ProjectWideLspServerDescri
     }
 
     override val lspCommandsSupport = NextflowLspCommandsSupport()
+    override val lspCompletionSupport = NextflowLspCompletionSupport()
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true

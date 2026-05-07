@@ -42,3 +42,8 @@ bin/
 
 ### Mac OS ###
 .DS_Store
+
+# TextMate bundles
+/src/main/resources/textmate/
+# Mermaid JS library
+/src/main/resources/mermaid/mermaid.min.js

@@ -3,8 +3,11 @@
     <name>Nextflow LSP</name>
     <vendor>austinv11</vendor>
     <description><![CDATA[
-    Nextflow LSP support for IntelliJ IDEA and PyCharm.
+    Enhanced Nextflow LSP support for IntelliJ IDEA and PyCharm.
     ]]></description>
+    <change-notes><![CDATA[
+    Initial release.
+    ]]></change-notes>
 
     <dependencies>
         <plugin id="com.intellij.modules.platform"/>
@@ -28,6 +31,7 @@
         <lang.syntaxHighlighterFactory language="Nextflow" implementationClass="org.jetbrains.plugins.groovy.highlighter.GroovySyntaxHighlighterFactory"/>
 
         <fileTypeOverrider implementation="com.austinv11.nextflow.NextflowFileTypeOverrider"/>
+        <typedHandler implementation="com.austinv11.nextflow.NextflowCompletionAutoPopupHandler"/>
 
         <projectConfigurable
                 groupId="tools"
