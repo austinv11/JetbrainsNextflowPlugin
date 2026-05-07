@@ -14,6 +14,10 @@ import org.eclipse.lsp4j.ConfigurationItem
 import org.eclipse.lsp4j.DidChangeConfigurationParams
 import org.eclipse.lsp4j.InitializeResult
 import org.eclipse.lsp4j.InitializeParams
+import org.eclipse.lsp4j.MarkupKind
+import org.eclipse.lsp4j.SemanticTokensCapabilities
+import org.eclipse.lsp4j.SemanticTokensClientCapabilitiesRequests
+import org.eclipse.lsp4j.TokenFormat
 
 import java.io.File
 
@@ -52,11 +56,27 @@ class NextflowLspServerDescriptor(project: Project) : ProjectWideLspServerDescri
         val capabilities = params.capabilities ?: org.eclipse.lsp4j.ClientCapabilities()
 
         val textDocument = capabilities.textDocument ?: org.eclipse.lsp4j.TextDocumentClientCapabilities()
+
         val completion = textDocument.completion ?: org.eclipse.lsp4j.CompletionCapabilities()
         val completionItem = completion.completionItem ?: org.eclipse.lsp4j.CompletionItemCapabilities()
         completionItem.snippetSupport = true
+        completionItem.documentationFormat = listOf(MarkupKind.MARKDOWN, MarkupKind.PLAINTEXT)
         completion.completionItem = completionItem
+        completion.contextSupport = true
         textDocument.completion = completion
+
+        val hover = textDocument.hover ?: org.eclipse.lsp4j.HoverCapabilities()
+        hover.contentFormat = listOf(MarkupKind.MARKDOWN, MarkupKind.PLAINTEXT)
+        textDocument.hover = hover
+
+        val semanticTokens = textDocument.semanticTokens ?: SemanticTokensCapabilities()
+        semanticTokens.requests = SemanticTokensClientCapabilitiesRequests().apply { setFull(true) }
+        semanticTokens.tokenTypes = emptyList()
+        semanticTokens.tokenModifiers = emptyList()
+        semanticTokens.formats = listOf(TokenFormat.Relative)
+        semanticTokens.augmentsSyntaxTokens = true
+        textDocument.semanticTokens = semanticTokens
+
         capabilities.textDocument = textDocument
 
         val workspace = capabilities.workspace ?: org.eclipse.lsp4j.WorkspaceClientCapabilities()

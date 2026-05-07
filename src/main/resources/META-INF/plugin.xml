@@ -22,13 +22,18 @@
     <extensions defaultExtensionNs="com.intellij">
         <fileType name="Nextflow" language="Nextflow" implementationClass="com.austinv11.nextflow.NextflowFileType" fieldName="INSTANCE" extensions="nf" fileNames="nextflow.config"/>
 
-        <!-- Reuse Groovy's commenter and bracket matcher so // comments and brace matching
-             work in .nf files without requiring a full Groovy PSI dialect hierarchy. -->
+        <!-- Delegate parsing to Groovy — Nextflow is Groovy-based, so Groovy's lexer/parser
+             give IntelliJ a proper PSI tree and correct prefix computation for completion.
+             createFile() is overridden to use NextflowLanguage so the file root is Nextflow,
+             not Groovy. Syntax highlighting is intentionally left to the TextMate bundle
+             so that Nextflow-specific keywords (process, workflow, channel operators) are
+             highlighted correctly. -->
+        <lang.parserDefinition language="Nextflow" implementationClass="com.austinv11.nextflow.NextflowParserDefinition"/>
         <lang.commenter language="Nextflow" implementationClass="org.jetbrains.plugins.groovy.highlighter.GroovyCommenter"/>
         <lang.braceMatcher language="Nextflow" implementationClass="org.jetbrains.plugins.groovy.highlighter.GroovyBraceMatcher"/>
         <lang.quoteHandler language="Nextflow" implementationClass="org.jetbrains.plugins.groovy.editor.GroovyQuoteHandler"/>
-        <lang.syntaxHighlighter language="Nextflow" implementationClass="org.jetbrains.plugins.groovy.highlighter.GroovySyntaxHighlighter"/>
-        <lang.syntaxHighlighterFactory language="Nextflow" implementationClass="org.jetbrains.plugins.groovy.highlighter.GroovySyntaxHighlighterFactory"/>
+        <lang.syntaxHighlighter language="Nextflow" implementationClass="com.austinv11.nextflow.NextflowSyntaxHighlighter"/>
+        <lang.syntaxHighlighterFactory language="Nextflow" implementationClass="com.austinv11.nextflow.NextflowSyntaxHighlighterFactory"/>
 
         <fileTypeOverrider implementation="com.austinv11.nextflow.NextflowFileTypeOverrider"/>
         <typedHandler implementation="com.austinv11.nextflow.NextflowCompletionAutoPopupHandler"/>
