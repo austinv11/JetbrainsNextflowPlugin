@@ -67,5 +67,8 @@
             <add-to-group group-id="CodeMenu" anchor="last"/>
             <add-to-group group-id="EditorPopupMenu" anchor="last"/>
         </action>
+        <action id="Nextflow.NewFile" class="com.austinv11.nextflow.actions.NextflowCreateFileAction" text="Nextflow File" description="Create a new Nextflow file" icon="com.austinv11.nextflow.NextflowIcons.FILE">
+            <add-to-group group-id="NewGroup" anchor="before" relative-to-action="NewFile" />
+        </action>
     </actions>
 </idea-plugin>

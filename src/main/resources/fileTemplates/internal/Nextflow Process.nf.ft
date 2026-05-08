@@ -1,0 +1,10 @@
+process ${PROCESS_NAME} {
+    
+    input:
+    
+    output:
+    
+    script:
+    """
+    """
+}

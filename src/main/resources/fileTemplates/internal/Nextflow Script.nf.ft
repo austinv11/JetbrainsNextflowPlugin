@@ -1,0 +1,3 @@
+workflow ${WORKFLOW_NAME} {
+    // Your workflow logic here
+}
