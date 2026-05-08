@@ -23,6 +23,7 @@ dependencies {
     intellijPlatform {
         intellijIdea("2026.1.1")
         bundledPlugin("org.jetbrains.plugins.textmate")
+        bundledPlugin("org.jetbrains.plugins.terminal")
         bundledPlugin("org.intellij.groovy")
         testFramework(org.jetbrains.intellij.platform.gradle.TestFrameworkType.Platform)
     }
