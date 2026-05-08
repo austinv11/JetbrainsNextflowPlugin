@@ -1,16 +1,21 @@
 package com.austinv11.nextflow.execution
 
 import com.intellij.execution.lineMarker.ExecutorAction
+import com.intellij.codeInsight.daemon.LineMarkerInfo
+import com.intellij.codeInsight.daemon.LineMarkerProvider
 import com.intellij.execution.lineMarker.RunLineMarkerContributor
+
+import com.intellij.openapi.editor.markup.GutterIconRenderer
+import com.intellij.execution.lineMarker.RunLineMarkerContributor.Info
 import com.intellij.icons.AllIcons
 import com.intellij.psi.PsiComment
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiWhiteSpace
 import com.intellij.psi.impl.source.tree.LeafPsiElement
 
-class NextflowRunLineMarkerContributor : RunLineMarkerContributor() {
+class NextflowRunLineMarkerContributor : LineMarkerProvider {
 
-    override fun getInfo(element: PsiElement): Info? {
+    override fun getLineMarkerInfo(element: PsiElement): LineMarkerInfo<*>? {
         if (element !is LeafPsiElement) return null
 
         val text = element.text
@@ -64,10 +69,32 @@ class NextflowRunLineMarkerContributor : RunLineMarkerContributor() {
         // 0 gets both Run and Debug actions, if supported.
         val actions = ExecutorAction.getActions(0)
         val tooltip = if (name != null) "Run $text '$name'" else "Run $text"
-        return Info(
+        val info = RunLineMarkerContributor.Info(
             AllIcons.RunConfigurations.TestState.Run,
             actions,
             { tooltip }
         )
+        // Fallback to standard LineMarkerInfo which does support ExecutorAction manually maybe?
+        // Wait, standard RunLineMarkerContributor just returns info and RunLineMarkerProvider builds the marker.
+        // Let's just create a custom LineMarkerInfo and inject the run actions.
+        return object : LineMarkerInfo<PsiElement>(
+            element,
+            element.textRange,
+            info.icon,
+            { tooltip },
+            null,
+            GutterIconRenderer.Alignment.CENTER,
+            { tooltip }
+        ) {
+            override fun createGutterRenderer(): GutterIconRenderer {
+                return object : com.intellij.codeInsight.daemon.LineMarkerInfo.LineMarkerGutterIconRenderer<PsiElement>(this) {
+                    override fun getClickAction(): com.intellij.openapi.actionSystem.AnAction? = null
+                    override fun isNavigateAction(): Boolean = true
+                    override fun getPopupMenuActions(): com.intellij.openapi.actionSystem.ActionGroup {
+                        return com.intellij.openapi.actionSystem.DefaultActionGroup(actions.toList())
+                    }
+                }
+            }
+        }
     }
 }

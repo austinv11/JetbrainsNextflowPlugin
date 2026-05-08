@@ -41,7 +41,7 @@ class NextflowRunLineMarkerContributorTest : BasePlatformTestCase() {
         var element = file.firstChild
         val actualMarkersText = mutableListOf<String>()
         while (element != null) {
-            val info = contributor.getInfo(element)
+            val info = contributor.getLineMarkerInfo(element)
             if (info != null) {
                 actualMarkersText.add(element.text)
             }
