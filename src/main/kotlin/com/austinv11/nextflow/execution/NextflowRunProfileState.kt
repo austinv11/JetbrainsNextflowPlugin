@@ -8,14 +8,85 @@ import com.intellij.execution.process.ProcessHandler
 import com.intellij.execution.process.ProcessHandlerFactory
 import com.intellij.execution.runners.ExecutionEnvironment
 import com.intellij.openapi.util.SystemInfo
-import java.io.File
+import com.intellij.execution.target.TargetEnvironmentConfiguration
+import com.intellij.execution.target.TargetEnvironmentAwareRunProfileState
+import com.intellij.execution.target.TargetEnvironmentRequest
+import com.intellij.execution.target.TargetedCommandLineBuilder
+import com.intellij.openapi.progress.ProgressIndicator
+
 
 class NextflowRunProfileState(
     environment: ExecutionEnvironment,
     private val configuration: NextflowRunConfiguration
-) : CommandLineState(environment) {
+) : CommandLineState(environment), TargetEnvironmentAwareRunProfileState {
+
+    private var targetCommandLineBuilder: TargetedCommandLineBuilder? = null
+
+    override fun prepareTargetEnvironmentRequest(
+        targetEnvironmentRequest: TargetEnvironmentRequest,
+        targetProgressIndicator: com.intellij.execution.target.TargetProgressIndicator
+    ) {
+        val targetedCommandLineBuilder = TargetedCommandLineBuilder(targetEnvironmentRequest)
+
+        val nextflowBin = NextflowSettings.getInstance(environment.project).state.nextflowBinaryPath.takeIf { it.isNotBlank() } ?: "nextflow"
+        targetedCommandLineBuilder.setExePath(nextflowBin)
+
+        if (environment.isDebug()) {
+            targetedCommandLineBuilder.addParameter("-remote-debug")
+        }
+
+        targetedCommandLineBuilder.addParameter("run")
+
+        val scriptPath = configuration.scriptPath
+        if (scriptPath.isNullOrBlank()) {
+            throw ExecutionException("Script path is not specified.")
+        }
+
+        targetedCommandLineBuilder.addParameter(scriptPath)
+
+        val entryName = configuration.entryName
+        if (!entryName.isNullOrBlank()) {
+            targetedCommandLineBuilder.addParameter("-entry")
+            targetedCommandLineBuilder.addParameter(entryName)
+        }
+
+        val profiles = configuration.profiles
+        if (!profiles.isNullOrBlank()) {
+            targetedCommandLineBuilder.addParameter("-profile")
+            targetedCommandLineBuilder.addParameter(profiles)
+        }
+
+        val parameters = configuration.parameters
+        if (!parameters.isNullOrBlank()) {
+            val paramsList = parameters.split(" ").filter { it.isNotBlank() }
+            paramsList.forEach { targetedCommandLineBuilder.addParameter(it) }
+        }
+
+        val arguments = configuration.arguments
+        if (!arguments.isNullOrBlank()) {
+            val argsList = arguments.split(" ").filter { it.isNotBlank() }
+            argsList.forEach { targetedCommandLineBuilder.addParameter(it) }
+        }
+
+        this.targetCommandLineBuilder = targetedCommandLineBuilder
+    }
+
+    override fun handleCreatedTargetEnvironment(
+        targetEnvironment: com.intellij.execution.target.TargetEnvironment,
+        targetProgressIndicator: com.intellij.execution.target.TargetProgressIndicator
+    ) {
+        // Setup done after environment is built
+    }
 
     override fun startProcess(): ProcessHandler {
+        val targetedBuilder = targetCommandLineBuilder
+        if (targetedBuilder != null) {
+            throw ExecutionException("Nextflow Target environment execution requires starting via TargetEnvironmentRunner in newer IntelliJ versions.")
+        }
+        return startLocalProcess()
+    }
+
+    private fun startLocalProcess(): ProcessHandler {
         val nextflowBin = NextflowSettings.getInstance(environment.project).state.nextflowBinaryPath.takeIf { it.isNotBlank() } ?: "nextflow"
 
         val commandLine = if (SystemInfo.isWindows) {
@@ -63,11 +134,14 @@ class NextflowRunProfileState(
             commandLine.addParameters(paramsList.map { convertToWslPathIfNeeded(it) })
         }
 
-        val processHandler = ProcessHandlerFactory.getInstance().createColoredProcessHandler(commandLine)
-        return processHandler
+        val arguments = configuration.arguments
+        if (!arguments.isNullOrBlank()) {
+            val argsList = arguments.split(" ").filter { it.isNotBlank() }
+            commandLine.addParameters(argsList)
+        }
+
+        return ProcessHandlerFactory.getInstance().createColoredProcessHandler(commandLine)
     }
-
-
 
     private fun convertToWslPathIfNeeded(path: String): String {
         if (!SystemInfo.isWindows) return path

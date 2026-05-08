@@ -8,6 +8,7 @@ class NextflowRunConfigurationOptions : LocatableRunConfigurationOptions() {
     private val parametersOption = string("").provideDelegate(this, "parameters")
     private val profilesOption = string("").provideDelegate(this, "profiles")
     private val workDirOption = string("").provideDelegate(this, "workDir")
+    private val argumentsOption = string("").provideDelegate(this, "arguments")
 
     var scriptPath: String?
         get() = scriptPathOption.getValue(this)
@@ -28,4 +29,8 @@ class NextflowRunConfigurationOptions : LocatableRunConfigurationOptions() {
     var workDir: String?
         get() = workDirOption.getValue(this)
         set(value) = workDirOption.setValue(this, value ?: "")
+
+    var arguments: String?
+        get() = argumentsOption.getValue(this)
+        set(value) = argumentsOption.setValue(this, value ?: "")
 }

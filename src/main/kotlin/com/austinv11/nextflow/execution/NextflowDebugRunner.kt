@@ -81,8 +81,9 @@ class NextflowDebugRunner : ProgramRunner<RunnerSettings> {
             val remoteConfigType = RemoteConfigurationType.getInstance()
             val remoteConfigFactory = remoteConfigType.configurationFactories.first()
             val remoteConfig = RemoteConfiguration(project, remoteConfigFactory)
-            
-            remoteConfig.HOST = "localhost"
+
+            val host = if ((environment.runProfile as? NextflowRunConfiguration)?.defaultTargetName != null) { "localhost" } else { "localhost" }
+            remoteConfig.HOST = host
             remoteConfig.PORT = port.toString()
             remoteConfig.USE_SOCKET_TRANSPORT = true
             remoteConfig.SERVER_MODE = false

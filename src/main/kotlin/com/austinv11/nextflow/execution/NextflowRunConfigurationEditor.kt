@@ -2,19 +2,25 @@ package com.austinv11.nextflow.execution
 
 import com.intellij.openapi.fileChooser.FileChooserDescriptorFactory
 import com.intellij.openapi.options.SettingsEditor
+import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.TextFieldWithBrowseButton
 import com.intellij.openapi.ui.TextComponentAccessor
 import com.intellij.ui.components.JBTextField
 import com.intellij.ui.dsl.builder.AlignX
 import com.intellij.ui.dsl.builder.panel
 import javax.swing.JComponent
+import com.intellij.execution.ui.DefaultJreSelector
+import com.intellij.execution.ui.JrePathEditor
 
-class NextflowRunConfigurationEditor : SettingsEditor<NextflowRunConfiguration>() {
+class NextflowRunConfigurationEditor(private val project: Project) : SettingsEditor<NextflowRunConfiguration>() {
     private val scriptPathField = TextFieldWithBrowseButton()
     private val entryNameField = JBTextField()
     private val parametersField = JBTextField()
     private val profilesField = JBTextField()
+    private val argumentsField = JBTextField()
     private val workDirField = TextFieldWithBrowseButton()
+    // To support Target Environments gracefully in standard settings editor without fragments:
+    private val targetEnvironmentCombo = com.intellij.execution.target.TargetEnvironmentsConfigurable(project)
 
     init {
         scriptPathField.addBrowseFolderListener(
@@ -39,7 +45,10 @@ class NextflowRunConfigurationEditor : SettingsEditor<NextflowRunConfiguration>(
         entryNameField.text = config.entryName ?: ""
         parametersField.text = config.parameters ?: ""
         profilesField.text = config.profiles ?: ""
+        argumentsField.text = config.arguments ?: ""
         workDirField.text = config.workDir ?: ""
+        // Wait, TargetEnvironmentsConfigurable doesn't expose a simple setter for the selected item
+        // We'll use the default Extension mechanism for Run Configurations which automatically injects target selection.
     }
 
     override fun applyEditorTo(config: NextflowRunConfiguration) {
@@ -47,6 +56,7 @@ class NextflowRunConfigurationEditor : SettingsEditor<NextflowRunConfiguration>(
         config.entryName = entryNameField.text
         config.parameters = parametersField.text
         config.profiles = profilesField.text
+        config.arguments = argumentsField.text
         config.workDir = workDirField.text
     }
 
@@ -61,12 +71,17 @@ class NextflowRunConfigurationEditor : SettingsEditor<NextflowRunConfiguration>(
             row("Parameters:") {
                 cell(parametersField).align(AlignX.FILL)
             }
+            row("Arguments:") {
+                cell(argumentsField).align(AlignX.FILL)
+            }
             row("Profiles:") {
                 cell(profilesField).align(AlignX.FILL)
             }
             row("Working directory:") {
                 cell(workDirField).align(AlignX.FILL)
             }
+            // Usually the Run Target is injected automatically by IntelliJ at the bottom or top of the run configuration
+            // if it implements TargetEnvironmentAwareRunProfile.
         }
     }
 }
