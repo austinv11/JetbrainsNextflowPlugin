@@ -51,6 +51,7 @@
                     icon="com.austinv11.nextflow.NextflowIcons.FILE"
                     factoryClass="com.austinv11.nextflow.toolwindow.NextflowToolWindowFactory"
                     doNotActivateOnStart="true"/>
+        <notificationGroup id="Nextflow Missing" displayType="STICKY_BALLOON"/>
     </extensions>
 
     <actions>
