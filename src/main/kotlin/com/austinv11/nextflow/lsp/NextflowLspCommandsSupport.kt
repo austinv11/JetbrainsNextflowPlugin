@@ -60,7 +60,7 @@ class NextflowLspCommandsSupport : LspCommandsSupport() {
                     }
                     when {
                         diagram != null -> DagPreviewDialog(project, diagram).show()
-                        else -> Messages.showErrorDialog(project, "Unexpected response from server", "DAG Preview Error")
+                        else -> Messages.showErrorDialog(project, "Unexpected response from server: ${result?.javaClass?.name} - $result", "DAG Preview Error")
                     }
                 }
             } catch (e: Exception) {
