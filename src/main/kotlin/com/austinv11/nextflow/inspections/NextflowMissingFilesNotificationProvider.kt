@@ -2,8 +2,10 @@ package com.austinv11.nextflow.inspections
 
 import com.austinv11.nextflow.NextflowSettings
 import com.intellij.ide.fileTemplates.FileTemplateManager
-import com.intellij.ide.fileTemplates.ui.CreateFromTemplateDialog
+import com.intellij.ide.fileTemplates.FileTemplateUtil
+import com.intellij.openapi.command.WriteCommandAction
 import com.intellij.openapi.fileEditor.FileEditor
+import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.guessProjectDir
 import com.intellij.openapi.vfs.VirtualFile
@@ -49,13 +51,15 @@ class NextflowMissingFilesNotificationProvider : EditorNotificationProvider {
 
             if (missingMain) {
                 panel.createActionLabel("Create main.nf") {
-                    createFileFromTemplate(project, projectDir, "main", "Nextflow Script")
+                    createFileFromTemplateSilent(project, projectDir, "main", "Nextflow Script")
+                    EditorNotifications.getInstance(project).updateAllNotifications()
                 }
             }
 
             if (missingConfig) {
                 panel.createActionLabel("Create nextflow.config") {
-                    createFileFromTemplate(project, projectDir, "nextflow", "Nextflow Config")
+                    createFileFromTemplateSilent(project, projectDir, "nextflow", "Nextflow Config")
+                    EditorNotifications.getInstance(project).updateAllNotifications()
                 }
             }
 
@@ -68,7 +72,7 @@ class NextflowMissingFilesNotificationProvider : EditorNotificationProvider {
         }
     }
 
-    private fun createFileFromTemplate(project: Project, projectDir: VirtualFile, fileName: String, templateName: String) {
+    private fun createFileFromTemplateSilent(project: Project, projectDir: VirtualFile, fileName: String, templateName: String) {
         val psiManager = PsiManager.getInstance(project)
         val psiDir = psiManager.findDirectory(projectDir) ?: return
 
@@ -79,7 +83,22 @@ class NextflowMissingFilesNotificationProvider : EditorNotificationProvider {
         properties.setProperty(FileTemplateManager.PROJECT_NAME_VARIABLE, project.name)
         properties.setProperty("NAME", fileName)
 
-        val dialog = CreateFromTemplateDialog(project, psiDir, template, null, properties)
-        dialog.create()
+        WriteCommandAction.runWriteCommandAction(project, "Create $fileName", null, {
+            try {
+                // 1. Capture the newly created PsiElement
+                val createdElement = FileTemplateUtil.createFromTemplate(template, fileName, properties, psiDir)
+
+                // 2. Extract the VirtualFile
+                val virtualFile = createdElement.containingFile?.virtualFile
+
+                // 3. Open the file in the editor, setting focus to true
+                if (virtualFile != null) {
+                    FileEditorManager.getInstance(project).openFile(virtualFile, true)
+                }
+
+            } catch (e: Exception) {
+                // Ignore if it fails
+            }
+        })
     }
 }

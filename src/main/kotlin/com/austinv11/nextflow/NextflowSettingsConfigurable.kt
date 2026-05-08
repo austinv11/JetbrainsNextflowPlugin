@@ -157,6 +157,16 @@ class NextflowSettingsConfigurable(private val project: Project) : BoundConfigur
                 }.rowComment("Comma-separated list of directories or glob patterns excluded from analysis.")
             }
 
+            group("Inspections") {
+                row {
+                    checkBox("Ignore missing files warning (main.nf, nextflow.config)")
+                        .bindSelected(
+                            getter = { state.ignoreMissingFilesWarning },
+                            setter = { state.ignoreMissingFilesWarning = it }
+                        )
+                }
+            }
+
             group("Advanced") {
                 row {
                     checkBox("Enable LSP server debug logging")
