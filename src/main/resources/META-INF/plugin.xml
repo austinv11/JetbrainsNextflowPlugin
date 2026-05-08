@@ -60,6 +60,10 @@
         <editorNotificationProvider implementation="com.austinv11.nextflow.inspections.NextflowMissingFilesNotificationProvider"/>
         <multiHostInjector implementation="com.austinv11.nextflow.NextflowLanguageInjector"/>
         <psi.referenceContributor language="Nextflow" implementation="com.austinv11.nextflow.NextflowFileReferenceContributor"/>
+        <configurationType implementation="com.austinv11.nextflow.execution.NextflowRunConfigurationType" />
+        <runConfigurationProducer implementation="com.austinv11.nextflow.execution.NextflowRunConfigurationProducer" />
+        <runLineMarkerContributor language="Nextflow" implementationClass="com.austinv11.nextflow.execution.NextflowRunLineMarkerContributor" />
+        <programRunner implementation="com.austinv11.nextflow.execution.NextflowDebugRunner" />
     </extensions>
 
     <actions>

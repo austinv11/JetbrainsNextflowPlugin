@@ -31,11 +31,11 @@ import kotlin.collections.get
 
 class NextflowLspCommandsSupport : LspCommandsSupport() {
 
-    override fun executeCommand(server: LspServer, file: VirtualFile, command: Command) {
+    override fun executeCommand(server: LspServer, contextFile: VirtualFile, command: Command) {
         if (command.command == "nextflow.previewDag") {
             previewDag(server, command)
         } else {
-            super.executeCommand(server, file, command)
+            super.executeCommand(server, contextFile, command)
         }
     }
 
