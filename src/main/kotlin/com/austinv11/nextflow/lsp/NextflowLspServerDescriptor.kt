@@ -11,6 +11,7 @@ import com.intellij.platform.lsp.api.LspServerManager
 import com.intellij.platform.lsp.api.LspServerState
 import com.intellij.platform.lsp.api.ProjectWideLspServerDescriptor
 import com.intellij.openapi.diagnostic.Logger
+import com.intellij.openapi.util.SystemInfo
 import org.eclipse.lsp4j.ConfigurationItem
 import org.eclipse.lsp4j.DidChangeConfigurationParams
 import org.eclipse.lsp4j.InitializeResult
@@ -44,9 +45,10 @@ class NextflowLspServerDescriptor(project: Project) : ProjectWideLspServerDescri
                 ?: throw RuntimeException("Failed to locate or download Nextflow LSP server JAR")
         }
         val nextflowBin = NextflowSettings.getInstance(project).state.nextflowBinaryPath.takeIf { it.isNotBlank() } ?: "nextflow"
+        val actualBin = if (SystemInfo.isWindows) "wsl $nextflowBin" else nextflowBin
         val env = mutableMapOf<String, String>()
         env.putAll(System.getenv())
-        env["NEXTFLOW_BIN"] = nextflowBin
+        env["NEXTFLOW_BIN"] = actualBin
         val javaHome = NextflowSettings.getInstance(project).state.javaHome
         val javaExe = if (javaHome.isNotBlank()) {
             "$javaHome/bin/java"

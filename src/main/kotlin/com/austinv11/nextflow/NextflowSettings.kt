@@ -4,7 +4,9 @@ import com.intellij.openapi.components.PersistentStateComponent
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.Storage
 import com.intellij.openapi.components.State
+import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.util.SystemInfo
 import java.util.concurrent.TimeUnit
 
 @State(
@@ -13,6 +15,14 @@ import java.util.concurrent.TimeUnit
 )
 @Service(Service.Level.PROJECT)
 class NextflowSettings : PersistentStateComponent<NextflowSettings.State> {
+
+    companion object {
+        private val logger = Logger.getInstance(NextflowSettings::class.java)
+        private const val DEFAULT_LANGUAGE_VERSION = "26.04"
+
+        fun getInstance(project: Project): NextflowSettings =
+            project.getService(NextflowSettings::class.java)
+    }
 
     data class State(
         // Server
@@ -46,10 +56,12 @@ class NextflowSettings : PersistentStateComponent<NextflowSettings.State> {
         var debugMode: Boolean = false,
     )
 
-    private var myState = State().apply {
-        if (languageVersion == DEFAULT_LANGUAGE_VERSION) {
-            detectInstalledVersion()?.let { languageVersion = it }
-        }
+    private var myState = State()
+
+    init {
+        // Don't auto-detect during service initialization - it can block startup
+        // Detection will happen lazily when user opens settings or when needed
+        logger.info("NextflowSettings initialized (version detection deferred)")
     }
 
     override fun getState(): State = myState
@@ -59,25 +71,83 @@ class NextflowSettings : PersistentStateComponent<NextflowSettings.State> {
     }
 
     fun detectInstalledVersion(binaryPath: String? = null): String? {
-        return runCatching {
-            val bin = binaryPath?.takeIf { it.isNotBlank() } ?: myState.nextflowBinaryPath.takeIf { it.isNotBlank() } ?: "nextflow"
-            val process = ProcessBuilder(bin, "-v")
-                .redirectErrorStream(true)
-                .start()
-            if (!process.waitFor(2, TimeUnit.SECONDS)) {
-                process.destroyForcibly()
-                return@runCatching null
+        val bin = binaryPath?.takeIf { it.isNotBlank() }
+            ?: myState.nextflowBinaryPath.takeIf { it.isNotBlank() }
+            ?: "nextflow"
+
+        logger.info("detectInstalledVersion: Starting detection with binary: '$bin'")
+        logger.info("detectInstalledVersion: OS is ${if (SystemInfo.isWindows) "Windows" else if (SystemInfo.isMac) "macOS" else "Linux"}")
+
+        // On Windows, try native execution first, then WSL as fallback
+        val commandsToTry = if (SystemInfo.isWindows) {
+            listOf(
+                listOf(bin, "-v"),  // Try native Windows execution first
+                listOf("wsl", bin, "-v")  // Fall back to WSL
+            )
+        } else {
+            listOf(listOf(bin, "-v"))
+        }
+
+        logger.info("detectInstalledVersion: Will try ${commandsToTry.size} command(s)")
+
+        for ((index, command) in commandsToTry.withIndex()) {
+            val commandStr = command.joinToString(" ")
+            logger.info("detectInstalledVersion: Attempt ${index + 1}/${ commandsToTry.size}: $commandStr")
+
+            val result = runCatching {
+                val process = ProcessBuilder(command)
+                    .redirectErrorStream(true)
+                    .start()
+                logger.debug("Process started for: $commandStr")
+
+                // Drain stdout on a separate thread to prevent pipe-buffer deadlock
+                val outputBuffer = StringBuilder()
+                val readerThread = Thread {
+                    try {
+                        process.inputStream.bufferedReader().forEachLine { outputBuffer.appendLine(it) }
+                    } catch (_: Exception) {}
+                }.also { it.isDaemon = true; it.start() }
+
+                // WSL cold-start can be slow; give it more time
+                val timeoutSeconds = if (command[0] == "wsl") 30L else 5L
+
+                if (!process.waitFor(timeoutSeconds, TimeUnit.SECONDS)) {
+                    logger.warn("Process timeout for: $commandStr (waited $timeoutSeconds seconds)")
+                    process.destroyForcibly()
+                    return@runCatching null
+                }
+
+                readerThread.join(2_000)
+
+                val exitCode = process.exitValue()
+                logger.debug("Process exit code: $exitCode for: $commandStr")
+
+                val output = outputBuffer.toString().trim()
+                logger.debug("Process output: $output")
+
+                if (output.isBlank()) {
+                    logger.warn("Empty output from: $commandStr")
+                    return@runCatching null
+                }
+
+                val matcher = Regex("""(\d+)\.(\d+)""").find(output)
+                val version = matcher?.let { "${it.groupValues[1]}.${it.groupValues[2]}" }
+
+                if (version != null) {
+                    logger.info("Detected version: $version")
+                }
+                version
+            }.onFailure { throwable ->
+                logger.warn("Exception executing $commandStr: ${throwable.message}", throwable)
+            }.getOrNull()
+
+            if (result != null) {
+                logger.info("detectInstalledVersion: Successfully detected version $result")
+                return result
             }
-            val output = process.inputStream.bufferedReader().readText().trim()
-            val matcher = Regex("""(\d+)\.(\d+)""").find(output)
-            matcher?.let { "${it.groupValues[1]}.${it.groupValues[2]}" }
-        }.getOrNull()
-    }
+        }
 
-    companion object {
-        private const val DEFAULT_LANGUAGE_VERSION = "26.04"
-
-        fun getInstance(project: Project): NextflowSettings =
-            project.getService(NextflowSettings::class.java)
+        logger.warn("detectInstalledVersion: Failed to detect Nextflow version after trying all methods")
+        return null
     }
 }

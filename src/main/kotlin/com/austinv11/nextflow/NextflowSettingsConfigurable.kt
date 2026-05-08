@@ -1,8 +1,12 @@
 package com.austinv11.nextflow
 
 import com.austinv11.nextflow.lsp.NextflowLspServerSupportProvider
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.fileChooser.FileChooserDescriptorFactory
 import com.intellij.openapi.options.BoundConfigurable
+import com.intellij.openapi.progress.ProgressIndicator
+import com.intellij.openapi.progress.ProgressManager
+import com.intellij.openapi.progress.Task
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.DialogPanel
 import com.intellij.openapi.ui.Messages
@@ -86,12 +90,18 @@ class NextflowSettingsConfigurable(private val project: Project) : BoundConfigur
                             setter = { state.languageVersion = it.trim() }
                         )
                     button("Detect") {
-                        val version = settings.detectInstalledVersion(execFieldText)
-                        if (version != null) {
-                            versionField.component.text = version
-                        } else {
-                            Messages.showErrorDialog(project, "Could not detect Nextflow version. Please check the executable path.", "Nextflow Detection Failed")
-                        }
+                        ProgressManager.getInstance().run(object : Task.Backgroundable(project, "Detecting Nextflow version", false) {
+                            override fun run(indicator: ProgressIndicator) {
+                                val version = settings.detectInstalledVersion(execFieldText)
+                                ApplicationManager.getApplication().invokeLater {
+                                    if (version != null) {
+                                        versionField.component.text = version
+                                    } else {
+                                        Messages.showErrorDialog(project, "Could not detect Nextflow version. Please check the executable path.", "Nextflow Detection Failed")
+                                    }
+                                }
+                            }
+                        })
                     }
                 }.rowComment("Language version used for analysis, e.g. <b>26.04</b>.")
             }
