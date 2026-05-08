@@ -6,11 +6,10 @@ import com.intellij.openapi.vfs.VirtualFile
 
 class NextflowFileTypeOverrider : FileTypeOverrider {
     override fun getOverriddenFileType(file: VirtualFile): FileType? {
-        return if (file.name == "nextflow.config") {
+        return if (file.name == "nextflow.config" || file.name.endsWith(".nf.test")) {
             NextflowFileType.INSTANCE
         } else {
             null
         }
     }
 }
-

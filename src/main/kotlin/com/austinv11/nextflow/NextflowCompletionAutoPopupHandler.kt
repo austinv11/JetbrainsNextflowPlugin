@@ -25,6 +25,7 @@ class NextflowCompletionAutoPopupHandler : TypedHandlerDelegate() {
         val vf = file.virtualFile
         if (vf?.extension == "nf") return true
         if (vf?.name == "nextflow.config") return true
+        if (vf?.name?.endsWith(".nf.test") == true) return true
         return file.language.id == "Nextflow"
     }
 }

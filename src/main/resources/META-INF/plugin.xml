@@ -20,7 +20,7 @@
     </dependencies>
 
     <extensions defaultExtensionNs="com.intellij">
-        <fileType name="Nextflow" language="Nextflow" implementationClass="com.austinv11.nextflow.NextflowFileType" fieldName="INSTANCE" extensions="nf" fileNames="nextflow.config"/>
+        <fileType name="Nextflow" language="Nextflow" implementationClass="com.austinv11.nextflow.NextflowFileType" fieldName="INSTANCE" extensions="nf;nf.test" fileNames="nextflow.config"/>
 
         <!-- Delegate parsing to Groovy — Nextflow is Groovy-based, so Groovy's lexer/parser
              give IntelliJ a proper PSI tree and correct prefix computation for completion.
