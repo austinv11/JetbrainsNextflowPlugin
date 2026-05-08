@@ -30,6 +30,7 @@ class NextflowSettings : PersistentStateComponent<NextflowSettings.State> {
 
         // Formatting
         var formattingHarshilAlignment: Boolean = false,
+        var formattingMaheshForm: Boolean = false,
         var formattingSortDeclarations: Boolean = false,
 
         // Files

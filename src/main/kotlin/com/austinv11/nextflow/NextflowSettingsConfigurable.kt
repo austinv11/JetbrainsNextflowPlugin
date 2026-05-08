@@ -87,6 +87,13 @@ class NextflowSettingsConfigurable(private val project: Project) : BoundConfigur
                         )
                 }
                 row {
+                    checkBox("Mahesh form (place process outputs at the end of the process body)")
+                        .bindSelected(
+                            getter = { state.formattingMaheshForm },
+                            setter = { state.formattingMaheshForm = it }
+                        )
+                }
+                row {
                     checkBox("Sort declarations alphabetically")
                         .bindSelected(
                             getter = { state.formattingSortDeclarations },

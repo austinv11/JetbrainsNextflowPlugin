@@ -123,6 +123,10 @@ class NextflowLspServerDescriptor(project: Project) : ProjectWideLspServerDescri
             add("formatting", JsonObject().apply {
                 addProperty("harshilAlignment", state.formattingHarshilAlignment)
                 addProperty("sortDeclarations", state.formattingSortDeclarations)
+                addProperty("maheshForm", state.formattingMaheshForm)
+            })
+            add("telemetry", JsonObject().apply {
+                addProperty("enabled", false)
             })
         }
     }
