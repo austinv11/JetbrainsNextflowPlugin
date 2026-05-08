@@ -1,7 +1,7 @@
 nextflow_pipeline {
 
-    name "Test Pipeline ${PIPELINE_NAME}"
-    script "${SCRIPT_PATH}"
+    name "Test Pipeline ${NAME}"
+    script "main.nf"
 
     test("Should run without failures") {
 

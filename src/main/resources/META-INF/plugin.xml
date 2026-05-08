@@ -52,6 +52,10 @@
                     factoryClass="com.austinv11.nextflow.toolwindow.NextflowToolWindowFactory"
                     doNotActivateOnStart="true"/>
         <notificationGroup id="Nextflow Missing" displayType="STICKY_BALLOON"/>
+        <internalFileTemplate name="Nextflow Script"/>
+        <internalFileTemplate name="Nextflow Process"/>
+        <internalFileTemplate name="Nextflow Config"/>
+        <internalFileTemplate name="Nextflow Test"/>
     </extensions>
 
     <actions>
@@ -68,7 +72,7 @@
             <add-to-group group-id="EditorPopupMenu" anchor="last"/>
         </action>
         <action id="Nextflow.NewFile" class="com.austinv11.nextflow.actions.NextflowCreateFileAction" text="Nextflow File" description="Create a new Nextflow file" icon="com.austinv11.nextflow.NextflowIcons.FILE">
-            <add-to-group group-id="NewGroup" anchor="before" relative-to-action="NewFile" />
+            <add-to-group group-id="NewGroup" anchor="after" relative-to-action="NewFile" />
         </action>
     </actions>
 </idea-plugin>

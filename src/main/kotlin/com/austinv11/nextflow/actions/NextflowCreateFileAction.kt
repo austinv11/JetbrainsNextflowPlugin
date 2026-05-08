@@ -29,4 +29,14 @@ class NextflowCreateFileAction : CreateFileFromTemplateAction(
     override fun getActionName(directory: PsiDirectory?, newName: String, templateName: String?): String {
         return "Create Nextflow File $newName"
     }
+
+    override fun createFile(name: String?, templateName: String?, dir: PsiDirectory?): com.intellij.psi.PsiFile? {
+        var finalName = name ?: return null
+        if (templateName == "Nextflow Test") {
+            if (!finalName.endsWith(".nf.test")) {
+                finalName = finalName.removeSuffix(".test").removeSuffix(".nf") + ".nf.test"
+            }
+        }
+        return super.createFile(finalName, templateName, dir)
+    }
 }

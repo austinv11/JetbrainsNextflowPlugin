@@ -1,4 +1,4 @@
-process ${PROCESS_NAME} {
+process ${NAME} {
     
     input:
     
