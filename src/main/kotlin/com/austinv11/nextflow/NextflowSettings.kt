@@ -21,6 +21,9 @@ class NextflowSettings : PersistentStateComponent<NextflowSettings.State> {
         // Execution
         var nextflowBinaryPath: String = "",
 
+        // Java Runtime
+        var javaHome: String = "",
+
         // Diagnostics
         var errorReportingMode: String = "warnings",
 

@@ -42,6 +42,16 @@ class NextflowSettingsConfigurable(private val project: Project) : BoundConfigur
             }
 
             group("LSP Server") {
+                row("Java Home:") {
+                    textFieldWithBrowseButton(
+                        FileChooserDescriptorFactory.createSingleFolderDescriptor()
+                            .withTitle("Select Java Home Folder"),
+                        project
+                    ).bindText(
+                        getter = { state.javaHome },
+                        setter = { state.javaHome = it }
+                    ).comment("Specify the folder path to the desired Java runtime (e.g., equivalent to JAVA_HOME). Leave empty to use IDE default.")
+                }
                 row("Custom JAR:") {
                     textFieldWithBrowseButton(
                         FileChooserDescriptorFactory.createSingleFileDescriptor("jar")

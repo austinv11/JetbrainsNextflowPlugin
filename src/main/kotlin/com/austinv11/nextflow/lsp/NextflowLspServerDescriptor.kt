@@ -47,7 +47,12 @@ class NextflowLspServerDescriptor(project: Project) : ProjectWideLspServerDescri
         val env = mutableMapOf<String, String>()
         env.putAll(System.getenv())
         env["NEXTFLOW_BIN"] = nextflowBin
-        val javaExe = System.getProperty("java.home") + "/bin/java"
+        val javaHome = NextflowSettings.getInstance(project).state.javaHome
+        val javaExe = if (javaHome.isNotBlank()) {
+            "$javaHome/bin/java"
+        } else {
+            System.getProperty("java.home") + "/bin/java"
+        }
         return GeneralCommandLine(javaExe, "-jar", serverJar.absolutePath).withEnvironment(env)
     }
 
