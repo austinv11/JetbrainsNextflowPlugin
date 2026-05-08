@@ -8,10 +8,22 @@ plugins {
     id("org.jetbrains.kotlin.jvm") version "2.3.0"
     id("org.jetbrains.intellij.platform") version "2.16.0"
     id("org.jetbrains.changelog") version "2.2.1"
+    jacoco
 }
 
 group = "com.austinv11.nextflow"
-version = "1.0-SNAPSHOT"
+version = System.getenv("GITHUB_REF")?.let { ref ->
+    if (ref.startsWith("refs/tags/")) {
+        ref.substringAfter("refs/tags/")
+    } else null
+} ?: run {
+    try {
+        val process = ProcessBuilder("git", "rev-parse", "--short", "HEAD").start()
+        process.inputStream.bufferedReader().use { it.readText().trim() }
+    } catch (e: Exception) {
+        "1.0-SNAPSHOT"
+    }
+}
 
 repositories {
     mavenCentral()
@@ -104,6 +116,15 @@ tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
 
 tasks.test {
     useJUnitPlatform()
+    finalizedBy(tasks.jacocoTestReport)
+}
+
+tasks.jacocoTestReport {
+    dependsOn(tasks.test)
+    reports {
+        xml.required.set(true)
+        html.required.set(true)
+    }
 }
 
 val downloadMermaid by tasks.registering {

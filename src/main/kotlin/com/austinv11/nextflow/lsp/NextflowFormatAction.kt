@@ -16,6 +16,7 @@ import org.eclipse.lsp4j.FormattingOptions
 import org.eclipse.lsp4j.Position
 import org.eclipse.lsp4j.TextDocumentIdentifier
 import org.eclipse.lsp4j.TextEdit
+import org.eclipse.lsp4j.jsonrpc.ResponseErrorException
 import kotlin.math.min
 
 class NextflowFormatAction : AnAction() {
@@ -71,10 +72,22 @@ class NextflowFormatAction : AnAction() {
                     applyEdits(project, document, edits)
                 }
             } catch (ex: Exception) {
+                val errorMessage = if (ex is ResponseErrorException) {
+                    val msg = ex.responseError?.message ?: ex.message
+                    val data = ex.responseError?.data?.toString()
+                    if (data != null && data.isNotBlank()) {
+                        "$msg\nDetails: $data"
+                    } else {
+                        msg
+                    }
+                } else {
+                    ex.message
+                }
+
                 ApplicationManager.getApplication().invokeLater {
                     Messages.showErrorDialog(
                         project,
-                        "Failed to format with Nextflow LSP: ${ex.message}",
+                        "Failed to format with Nextflow LSP: $errorMessage",
                         "Format Error"
                     )
                 }
@@ -114,4 +127,3 @@ class NextflowFormatAction : AnAction() {
 
     private data class Edit(val start: Int, val end: Int, val newText: String)
 }
-

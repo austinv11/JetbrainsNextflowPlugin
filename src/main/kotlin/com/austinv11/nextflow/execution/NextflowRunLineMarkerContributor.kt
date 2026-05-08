@@ -1,9 +1,9 @@
 package com.austinv11.nextflow.execution
 
-import com.austinv11.nextflow.NextflowIcons
 import com.intellij.execution.lineMarker.ExecutorAction
 import com.intellij.execution.lineMarker.RunLineMarkerContributor
 import com.intellij.icons.AllIcons
+import com.intellij.psi.PsiComment
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiWhiteSpace
 import com.intellij.psi.impl.source.tree.LeafPsiElement
@@ -16,13 +16,17 @@ class NextflowRunLineMarkerContributor : RunLineMarkerContributor() {
         val text = element.text
         if (text != "workflow" && text != "process") return null
 
-        // Need to check if this is genuinely a definition and not just a random word.
-        // E.g., `workflow {` or `workflow foo {` or `process foo {`
+        // In Groovy/Nextflow flat PSI, "def workflow = 1" or "workflow_foo" could contain text "workflow".
+        // But since this is a leaf element from the parser, it should be matched exactly. We can verify
+        // it is not just a substring because `text` is exactly "workflow" or "process".
+        // However, we should be careful about variables named workflow: "def workflow" -> workflow is an identifier.
+        // Usually, definitions are at the root level, but let's just trace ahead.
+
         var sibling: PsiElement? = element.nextSibling
         var name: String? = null
 
-        // Skip whitespace
-        while (sibling is PsiWhiteSpace) {
+        // Skip whitespace, newlines, and comments
+        while (sibling is PsiWhiteSpace || sibling is PsiComment || (sibling is LeafPsiElement && sibling.text.trim().isEmpty())) {
             sibling = sibling.nextSibling
         }
 
@@ -34,7 +38,7 @@ class NextflowRunLineMarkerContributor : RunLineMarkerContributor() {
                 // Potential name
                 name = siblingText
                 sibling = sibling.nextSibling
-                while (sibling is PsiWhiteSpace) {
+                while (sibling is PsiWhiteSpace || sibling is PsiComment || (sibling is LeafPsiElement && sibling.text.trim().isEmpty())) {
                     sibling = sibling.nextSibling
                 }
                 if (sibling !is LeafPsiElement || sibling.text != "{") {
@@ -47,8 +51,18 @@ class NextflowRunLineMarkerContributor : RunLineMarkerContributor() {
             return null
         }
 
+        // Check if preceding is `def` to avoid `def workflow = 1`
+        var prevSibling = element.prevSibling
+        while (prevSibling is PsiWhiteSpace || prevSibling is PsiComment || (prevSibling is LeafPsiElement && prevSibling.text.trim().isEmpty())) {
+            prevSibling = prevSibling.prevSibling
+        }
+        if (prevSibling is LeafPsiElement && prevSibling.text == "def") {
+            return null
+        }
+
         // It is a valid definition
-        val actions = ExecutorAction.getActions(1)
+        // 0 gets both Run and Debug actions, if supported.
+        val actions = ExecutorAction.getActions(0)
         val tooltip = if (name != null) "Run $text '$name'" else "Run $text"
         return Info(
             AllIcons.RunConfigurations.TestState.Run,

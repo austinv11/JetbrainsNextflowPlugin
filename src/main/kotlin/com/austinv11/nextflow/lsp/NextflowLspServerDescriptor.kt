@@ -71,6 +71,10 @@ class NextflowLspServerDescriptor(project: Project) : ProjectWideLspServerDescri
 
         val textDocument = capabilities.textDocument ?: org.eclipse.lsp4j.TextDocumentClientCapabilities()
 
+        val publishDiagnostics = textDocument.publishDiagnostics ?: org.eclipse.lsp4j.PublishDiagnosticsCapabilities()
+        publishDiagnostics.relatedInformation = true
+        textDocument.publishDiagnostics = publishDiagnostics
+
         val completion = textDocument.completion ?: org.eclipse.lsp4j.CompletionCapabilities()
         val completionItem = completion.completionItem ?: org.eclipse.lsp4j.CompletionItemCapabilities()
         completionItem.snippetSupport = true
