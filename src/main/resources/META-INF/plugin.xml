@@ -58,6 +58,8 @@
         <internalFileTemplate name="Nextflow Config"/>
         <internalFileTemplate name="Nextflow Test"/>
         <editorNotificationProvider implementation="com.austinv11.nextflow.inspections.NextflowMissingFilesNotificationProvider"/>
+        <multiHostInjector implementation="com.austinv11.nextflow.NextflowLanguageInjector"/>
+        <psi.referenceContributor language="Nextflow" implementation="com.austinv11.nextflow.NextflowFileReferenceContributor"/>
     </extensions>
 
     <actions>
