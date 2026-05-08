@@ -7,7 +7,7 @@ import com.intellij.openapi.project.DumbAware
 import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiDirectory
 
-class NextflowCreateFileAction : CreateFileFromTemplateAction(
+open class NextflowCreateFileAction : CreateFileFromTemplateAction(
     "Nextflow File",
     "Create new Nextflow file",
     NextflowIcons.FILE

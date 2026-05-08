@@ -9,7 +9,7 @@ import com.intellij.lang.injection.InjectedLanguageManager
 // LeafPsiElement implementations are properly constructed by Groovy.
 
 class NextflowLanguageInjectorTest : BasePlatformTestCase() {
-    fun testDummy() {
+    fun testDummy() {  // FIXME: Implement a real language injection test.
         assertTrue(true)
     }
 }
