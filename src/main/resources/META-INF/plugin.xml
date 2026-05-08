@@ -52,4 +52,15 @@
                     factoryClass="com.austinv11.nextflow.toolwindow.NextflowToolWindowFactory"
                     doNotActivateOnStart="true"/>
     </extensions>
+
+    <actions>
+        <action id="Nextflow.ConvertPipelineToTyped" class="com.austinv11.nextflow.lsp.NextflowConvertPipelineToTypedAction" text="Convert Pipeline to Static Types" description="Convert Nextflow pipeline to static types">
+            <add-to-group group-id="ProjectViewPopupMenu" anchor="last"/>
+            <add-to-group group-id="ToolsMenu" anchor="last"/>
+        </action>
+        <action id="Nextflow.ConvertScriptToTyped" class="com.austinv11.nextflow.lsp.NextflowConvertScriptToTypedAction" text="Convert Script to Static Types" description="Convert Nextflow script to static types">
+            <add-to-group group-id="EditorPopupMenu" anchor="last"/>
+            <add-to-group group-id="ProjectViewPopupMenu" anchor="last"/>
+        </action>
+    </actions>
 </idea-plugin>
