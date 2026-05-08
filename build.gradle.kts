@@ -24,10 +24,13 @@ dependencies {
         intellijIdea("2026.1.1")
         bundledPlugin("org.jetbrains.plugins.textmate")
         bundledPlugin("org.intellij.groovy")
+        testFramework(org.jetbrains.intellij.platform.gradle.TestFrameworkType.Platform)
     }
 
     compileOnly("com.jetbrains.intellij.platform:lsp:241.14494.240")
 
+    testImplementation("junit:junit:4.13.2")
+    testImplementation("org.junit.vintage:junit-vintage-engine:5.10.2")
     testImplementation(platform("org.junit:junit-bom:6.0.0"))
     testImplementation("org.junit.jupiter:junit-jupiter")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
