@@ -5,6 +5,7 @@ import com.intellij.openapi.fileChooser.FileChooserDescriptorFactory
 import com.intellij.openapi.options.BoundConfigurable
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.DialogPanel
+import com.intellij.openapi.ui.Messages
 import com.intellij.platform.lsp.api.LspServerManager
 import com.intellij.ui.dsl.builder.bindIntText
 import com.intellij.ui.dsl.builder.bindItem
@@ -19,6 +20,27 @@ class NextflowSettingsConfigurable(private val project: Project) : BoundConfigur
     override fun createPanel(): DialogPanel {
         val state = settings.state
         return panel {
+            var execFieldText = ""
+
+            group("Execution") {
+                row("Nextflow executable:") {
+                    val execField = textFieldWithBrowseButton(
+                        FileChooserDescriptorFactory.createSingleFileNoJarsDescriptor().withTitle("Select Nextflow Executable"),
+                        project
+                    ).bindText(
+                        getter = { state.nextflowBinaryPath },
+                        setter = { state.nextflowBinaryPath = it }
+                    ).comment("Path to the Nextflow binary. Leave empty to auto-detect from PATH.")
+
+                    execField.component.textField.document.addDocumentListener(object : javax.swing.event.DocumentListener {
+                        override fun insertUpdate(e: javax.swing.event.DocumentEvent?) { execFieldText = execField.component.text }
+                        override fun removeUpdate(e: javax.swing.event.DocumentEvent?) { execFieldText = execField.component.text }
+                        override fun changedUpdate(e: javax.swing.event.DocumentEvent?) { execFieldText = execField.component.text }
+                    })
+                    execFieldText = state.nextflowBinaryPath
+                }
+            }
+
             group("LSP Server") {
                 row("Custom JAR:") {
                     textFieldWithBrowseButton(
@@ -54,8 +76,11 @@ class NextflowSettingsConfigurable(private val project: Project) : BoundConfigur
                             setter = { state.languageVersion = it.trim() }
                         )
                     button("Detect") {
-                        settings.detectInstalledVersion()?.let { detected ->
-                            versionField.component.text = detected
+                        val version = settings.detectInstalledVersion(execFieldText)
+                        if (version != null) {
+                            versionField.component.text = version
+                        } else {
+                            Messages.showErrorDialog(project, "Could not detect Nextflow version. Please check the executable path.", "Nextflow Detection Failed")
                         }
                     }
                 }.rowComment("Language version used for analysis, e.g. <b>26.04</b>.")

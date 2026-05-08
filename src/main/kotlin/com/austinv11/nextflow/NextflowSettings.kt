@@ -18,6 +18,9 @@ class NextflowSettings : PersistentStateComponent<NextflowSettings.State> {
         // Server
         var customLspJarPath: String = "",
 
+        // Execution
+        var nextflowBinaryPath: String = "",
+
         // Diagnostics
         var errorReportingMode: String = "warnings",
 
@@ -52,9 +55,10 @@ class NextflowSettings : PersistentStateComponent<NextflowSettings.State> {
         myState = state
     }
 
-    fun detectInstalledVersion(): String? {
+    fun detectInstalledVersion(binaryPath: String? = null): String? {
         return runCatching {
-            val process = ProcessBuilder("nextflow", "-v")
+            val bin = binaryPath?.takeIf { it.isNotBlank() } ?: myState.nextflowBinaryPath.takeIf { it.isNotBlank() } ?: "nextflow"
+            val process = ProcessBuilder(bin, "-v")
                 .redirectErrorStream(true)
                 .start()
             if (!process.waitFor(2, TimeUnit.SECONDS)) {

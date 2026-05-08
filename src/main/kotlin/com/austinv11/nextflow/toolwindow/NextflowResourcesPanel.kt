@@ -125,6 +125,7 @@ class NextflowResourcesPanel(private val project: Project) {
             leaf: Boolean, row: Int, hasFocus: Boolean
         ): Component {
             super.getTreeCellRendererComponent(tree, value, sel, expanded, leaf, row, hasFocus)
+            if (!sel) background = tree.background
             if (value is DefaultMutableTreeNode) {
                 val file = value.userObject as? File
                 if (file != null) {

@@ -235,6 +235,7 @@ class NextflowProjectPanel(private val project: Project) {
             leaf: Boolean, row: Int, hasFocus: Boolean
         ): java.awt.Component {
             super.getTreeCellRendererComponent(tree, value, sel, expanded, leaf, row, hasFocus)
+            if (!sel) background = tree.background
             if (value is DefaultMutableTreeNode) {
                 val userObject = value.userObject
                 if (userObject is ProjectNodeInfo) {

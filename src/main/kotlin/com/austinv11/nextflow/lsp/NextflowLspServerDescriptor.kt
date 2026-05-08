@@ -43,8 +43,12 @@ class NextflowLspServerDescriptor(project: Project) : ProjectWideLspServerDescri
             NextflowLspServerDownloader.getOrDownloadLspServer()
                 ?: throw RuntimeException("Failed to locate or download Nextflow LSP server JAR")
         }
+        val nextflowBin = NextflowSettings.getInstance(project).state.nextflowBinaryPath.takeIf { it.isNotBlank() } ?: "nextflow"
+        val env = mutableMapOf<String, String>()
+        env.putAll(System.getenv())
+        env["NEXTFLOW_BIN"] = nextflowBin
         val javaExe = System.getProperty("java.home") + "/bin/java"
-        return GeneralCommandLine(javaExe, "-jar", serverJar.absolutePath)
+        return GeneralCommandLine(javaExe, "-jar", serverJar.absolutePath).withEnvironment(env)
     }
 
     override fun getWorkspaceConfiguration(item: ConfigurationItem): Any? {
