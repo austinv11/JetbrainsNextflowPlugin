@@ -46,5 +46,10 @@
 
         <textmate.bundleProvider implementation="com.austinv11.nextflow.NextflowTextMateBundleProvider"/>
         <platform.lsp.serverSupportProvider implementation="com.austinv11.nextflow.lsp.NextflowLspServerSupportProvider"/>
+        <toolWindow id="Nextflow"
+                    anchor="right"
+                    icon="com.austinv11.nextflow.NextflowIcons.FILE"
+                    factoryClass="com.austinv11.nextflow.toolwindow.NextflowToolWindowFactory"
+                    doNotActivateOnStart="true"/>
     </extensions>
 </idea-plugin>
