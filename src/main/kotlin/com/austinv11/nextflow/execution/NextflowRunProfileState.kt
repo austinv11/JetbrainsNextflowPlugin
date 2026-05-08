@@ -17,7 +17,7 @@ class NextflowRunProfileState(
 
     override fun startProcess(): ProcessHandler {
         val nextflowBin = NextflowSettings.getInstance(environment.project).state.nextflowBinaryPath.takeIf { it.isNotBlank() } ?: "nextflow"
-        
+
         val commandLine = if (SystemInfo.isWindows) {
             GeneralCommandLine("wsl", nextflowBin)
         } else {
@@ -41,10 +41,8 @@ class NextflowRunProfileState(
         if (scriptPath.isNullOrBlank()) {
             throw ExecutionException("Script path is not specified.")
         }
-        
-        // If on windows and using WSL, we need to convert the path, but for simplicity let's rely on standard path resolution 
-        // or assume the user sets a valid WSL path if they are on Windows.
-        commandLine.addParameter(scriptPath)
+
+        commandLine.addParameter(convertToWslPathIfNeeded(scriptPath))
 
         val entryName = configuration.entryName
         if (!entryName.isNullOrBlank()) {
@@ -62,11 +60,31 @@ class NextflowRunProfileState(
         if (!parameters.isNullOrBlank()) {
             // Primitive split by space for now
             val paramsList = parameters.split(" ").filter { it.isNotBlank() }
-            commandLine.addParameters(paramsList)
+            commandLine.addParameters(paramsList.map { convertToWslPathIfNeeded(it) })
         }
 
         val processHandler = ProcessHandlerFactory.getInstance().createColoredProcessHandler(commandLine)
         return processHandler
+    }
+
+
+
+    private fun convertToWslPathIfNeeded(path: String): String {
+        if (!SystemInfo.isWindows) return path
+
+        // Regex to find things like C:/ or C:\, optionally preceded by '=' or spaces (e.g. --input=C:/...)
+        val regex = Regex("""(^|[^a-zA-Z0-9])([a-zA-Z]):[/\\]""")
+        var result = path
+        // Apply replace and normalise slashes if modified
+        result = result.replace(regex) { matchResult ->
+            val prefix = matchResult.groupValues[1]
+            val drive = matchResult.groupValues[2].lowercase()
+            "$prefix/mnt/$drive/"
+        }
+
+        // Only replace backslashes if the string actually looks like a path and was processed or we are on windows
+        // To be safe we just replace all backslashes with forward slashes since WSL only uses forward slashes
+        return result.replace('\\', '/')
     }
 
     private fun ExecutionEnvironment.isDebug(): Boolean {
