@@ -7,6 +7,7 @@ plugins {
     id("java")
     id("org.jetbrains.kotlin.jvm") version "2.3.0"
     id("org.jetbrains.intellij.platform") version "2.16.0"
+    id("org.jetbrains.changelog") version "2.2.1"
 }
 
 group = "com.austinv11.nextflow"
@@ -37,15 +38,34 @@ dependencies {
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
 
+changelog {
+    version = project.version.toString()
+    path = layout.projectDirectory.file("CHANGELOG.md").asFile.absolutePath
+    header = provider { "[${version.get()}]" }
+    headerParserRegex = ".*"
+    itemPrefix = "-"
+    keepUnreleasedSection = true
+    unreleasedTerm = "[Unreleased]"
+    groups = listOf("Added", "Changed", "Deprecated", "Removed", "Fixed", "Security")
+}
+
 intellijPlatform {
     pluginConfiguration {
         id = "com.austinv11.nextflow"
         name = "Nextflow Support"
+        version = project.version.toString()
         vendor {
             name = "austinv11"
         }
         ideaVersion {
             sinceBuild = "241.0"
+        }
+
+        changeNotes = provider {
+            changelog.renderItem(
+                changelog.getOrNull(project.version.toString())
+                    ?: changelog.getUnreleased()
+            )
         }
     }
     publishing {

@@ -5,9 +5,6 @@
     <description><![CDATA[
     Enhanced Nextflow support for IntelliJ IDEA and PyCharm.
     ]]></description>
-    <change-notes><![CDATA[
-    Initial release.
-    ]]></change-notes>
 
     <dependencies>
         <plugin id="com.intellij.modules.platform"/>
