@@ -4,6 +4,9 @@ import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.editor.EditorFactory
+import com.intellij.openapi.fileEditor.FileDocumentManager
+import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.Messages
 import com.intellij.platform.lsp.api.LspServerManager
@@ -36,6 +39,23 @@ class NextflowConvertPipelineToTypedAction : AnAction() {
         val targetFolder = dialog.getSelectedFolder()
         if (targetFolder.isBlank()) return
 
+        // Flush unsaved changes so the server reads positions from the same content
+        // that IntelliJ's in-memory documents hold. workspace/applyEdit positions
+        // would be wrong if disk differs from memory when the server builds its AST.
+        FileDocumentManager.getInstance().saveAllDocuments()
+
+        // Move all carets to offset 0 in every open file under the target folder.
+        // IntelliJ's workspace/applyEdit handler uses the caret as a split boundary
+        // when the caret falls inside a replacement range, causing duplication.
+        val fdm = FileDocumentManager.getInstance()
+        for (openFile in FileEditorManager.getInstance(project).openFiles) {
+            if (openFile.path.startsWith(targetFolder)) {
+                val doc = fdm.getDocument(openFile) ?: continue
+                EditorFactory.getInstance().getEditors(doc, project)
+                    .forEach { it.caretModel.moveToOffset(0) }
+            }
+        }
+
         val serverManager = LspServerManager.getInstance(project)
         val server = serverManager.getServersForProvider(NextflowLspServerSupportProvider::class.java)
             .firstOrNull { it.state == LspServerState.Running }
@@ -47,7 +67,7 @@ class NextflowConvertPipelineToTypedAction : AnAction() {
 
         ApplicationManager.getApplication().executeOnPooledThread {
             try {
-                val result = server.sendRequestSync { languageServer ->
+                server.sendRequestSync { languageServer ->
                     languageServer.workspaceService.executeCommand(
                         ExecuteCommandParams().apply {
                             this.command = "nextflow.server.convertPipelineToTyped"

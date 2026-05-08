@@ -1,9 +1,9 @@
 <idea-plugin>
     <id>com.austinv11.nextflow</id>
-    <name>Nextflow LSP</name>
+    <name>Nextflow Support</name>
     <vendor>austinv11</vendor>
     <description><![CDATA[
-    Enhanced Nextflow LSP support for IntelliJ IDEA and PyCharm.
+    Enhanced Nextflow support for IntelliJ IDEA and PyCharm.
     ]]></description>
     <change-notes><![CDATA[
     Initial release.
@@ -61,6 +61,10 @@
         <action id="Nextflow.ConvertScriptToTyped" class="com.austinv11.nextflow.lsp.NextflowConvertScriptToTypedAction" text="Convert Script to Static Types" description="Convert Nextflow script to static types">
             <add-to-group group-id="EditorPopupMenu" anchor="last"/>
             <add-to-group group-id="ProjectViewPopupMenu" anchor="last"/>
+        </action>
+        <action id="Nextflow.Format" class="com.austinv11.nextflow.lsp.NextflowFormatAction" text="Format Nextflow (LSP)" description="Format Nextflow file using the LSP server">
+            <add-to-group group-id="CodeMenu" anchor="last"/>
+            <add-to-group group-id="EditorPopupMenu" anchor="last"/>
         </action>
     </actions>
 </idea-plugin>

@@ -117,29 +117,64 @@ class NextflowProjectPanel(private val project: Project) {
                 }
 
                 val nodes = parseLspResult(result)
+                val nodeByKey = nodes.associateBy { it.key() }
+                val childKeys = nodes.flatMap { it.children }.map { it.key() }.toSet()
 
                 val root = DefaultMutableTreeNode("Workspace")
-                for (node in nodes) {
-                    val treeNode = DefaultMutableTreeNode(node)
-                    val nodeDir = File(node.path).parent
-                    val matchingTest = testMap[nodeDir]?.find { it.name == node.name }
-                    if (matchingTest != null) {
-                        val testTreeNode = DefaultMutableTreeNode(
-                            ProjectNodeInfo(matchingTest.name, "test", matchingTest.path, matchingTest.line)
-                        )
-                        treeNode.add(testTreeNode)
-                    }
-                    root.add(treeNode)
+                for (node in nodes.filterNot { childKeys.contains(it.key()) }) {
+                    root.add(buildTreeNode(node, nodeByKey, testMap, mutableSetOf()))
                 }
 
                 ApplicationManager.getApplication().invokeLater {
                     treeModel.setRoot(root)
                     treeModel.reload()
+                    expandAll(tree, 0, tree.rowCount)
                 }
             } catch (e: Exception) {
                 logger.error("Failed to fetch project view data", e)
             }
         }
+    }
+
+    private fun expandAll(tree: JTree, startRow: Int, endRow: Int) {
+        var row = startRow
+        while (row < endRow) {
+            tree.expandRow(row)
+            row += 1
+        }
+        if (tree.rowCount > endRow) {
+            expandAll(tree, endRow, tree.rowCount)
+        }
+    }
+
+    private fun buildTreeNode(
+        node: ProjectNodeInfo,
+        nodeByKey: Map<String, ProjectNodeInfo>,
+        testMap: Map<String, List<TestNodeInfo>>,
+        ancestorKeys: MutableSet<String>
+    ): DefaultMutableTreeNode {
+        val treeNode = DefaultMutableTreeNode(node)
+        val key = node.key()
+        if (!ancestorKeys.add(key)) return treeNode
+
+        val nodeDir = File(node.path).parent
+        val matchingTest = testMap[nodeDir]?.find { it.name == node.name }
+        if (matchingTest != null) {
+            treeNode.add(
+                DefaultMutableTreeNode(
+                    ProjectNodeInfo(matchingTest.name, "test", matchingTest.path, matchingTest.line)
+                )
+            )
+        }
+
+        for (child in node.children) {
+            val resolvedChild = nodeByKey[child.key()]
+                ?: ProjectNodeInfo(child.name, "unknown", child.path, 0)
+            treeNode.add(buildTreeNode(resolvedChild, nodeByKey, testMap, ancestorKeys))
+        }
+
+        ancestorKeys.remove(key)
+        return treeNode
     }
 
     private fun parseLspResult(result: Any?): List<ProjectNodeInfo> {
@@ -152,11 +187,25 @@ class NextflowProjectPanel(private val project: Project) {
                     val type = item["type"] as? String ?: continue
                     val path = item["path"] as? String ?: continue
                     val line = (item["line"] as? Double)?.toInt() ?: 0
-                    nodes.add(ProjectNodeInfo(name, type, path, line))
+                    val children = parseChildren(item["children"])
+                    nodes.add(ProjectNodeInfo(name, type, path, line, children))
                 }
             }
         }
         return nodes
+    }
+
+    private fun parseChildren(children: Any?): List<ProjectNodeRef> {
+        val refs = mutableListOf<ProjectNodeRef>()
+        val childrenArray = children as? List<*> ?: return refs
+        for (child in childrenArray) {
+            if (child is LinkedTreeMap<*, *>) {
+                val name = child["name"] as? String ?: continue
+                val path = child["path"] as? String ?: continue
+                refs.add(ProjectNodeRef(name, path))
+            }
+        }
+        return refs
     }
 
     private fun findNfTests(dirPath: String?): List<TestNodeInfo> {
@@ -169,7 +218,7 @@ class NextflowProjectPanel(private val project: Project) {
             .filter { it.isFile && it.name.endsWith(".nf.test") }
             .forEach { file ->
                 val text = file.readText()
-                val regex = Regex("""^\s*(process|workflow)\s+"(\w+)"""", setOf(RegexOption.MULTILINE))
+                val regex = Regex("""^\s*(process|workflow)\s+\"(\w+)\"""", setOf(RegexOption.MULTILINE))
                 regex.findAll(text).forEach { matchResult ->
                     val name = matchResult.groupValues[2]
                     val index = matchResult.range.first
@@ -189,7 +238,11 @@ class NextflowProjectPanel(private val project: Project) {
             if (value is DefaultMutableTreeNode) {
                 val userObject = value.userObject
                 if (userObject is ProjectNodeInfo) {
-                    text = userObject.name
+                    text = if (userObject.name == "<entry>") {
+                        "Entry (${File(userObject.path).name})"
+                    } else {
+                        userObject.name
+                    }
                     icon = when (userObject.type.lowercase()) {
                         "workflow" -> AllIcons.Nodes.Deploy
                         "process" -> AllIcons.Gutter.WriteAccess
@@ -202,8 +255,19 @@ class NextflowProjectPanel(private val project: Project) {
         }
     }
 
-    data class ProjectNodeInfo(val name: String, val type: String, val path: String, val line: Int) {
+    data class ProjectNodeInfo(
+        val name: String,
+        val type: String,
+        val path: String,
+        val line: Int,
+        val children: List<ProjectNodeRef> = emptyList()
+    ) {
+        fun key(): String = "$path::$name"
         override fun toString() = name
+    }
+
+    data class ProjectNodeRef(val name: String, val path: String) {
+        fun key(): String = "$path::$name"
     }
 
     data class TestNodeInfo(val name: String, val path: String, val line: Int)

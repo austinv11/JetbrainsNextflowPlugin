@@ -39,7 +39,7 @@ dependencies {
 intellijPlatform {
     pluginConfiguration {
         id = "com.austinv11.nextflow"
-        name = "Nextflow LSP Support"
+        name = "Nextflow Support"
         vendor {
             name = "austinv11"
         }

@@ -10,6 +10,7 @@ import com.intellij.platform.lsp.api.LspServerListener
 import com.intellij.platform.lsp.api.LspServerManager
 import com.intellij.platform.lsp.api.LspServerState
 import com.intellij.platform.lsp.api.ProjectWideLspServerDescriptor
+import com.intellij.openapi.diagnostic.Logger
 import org.eclipse.lsp4j.ConfigurationItem
 import org.eclipse.lsp4j.DidChangeConfigurationParams
 import org.eclipse.lsp4j.InitializeResult
@@ -22,6 +23,8 @@ import org.eclipse.lsp4j.TokenFormat
 import java.io.File
 
 class NextflowLspServerDescriptor(project: Project) : ProjectWideLspServerDescriptor(project, "Nextflow LSP") {
+
+    private val logger = Logger.getInstance(NextflowLspServerDescriptor::class.java)
 
     override fun isSupportedFile(file: VirtualFile): Boolean = file.extension == "nf" || file.name == "nextflow.config"
 
@@ -91,6 +94,10 @@ class NextflowLspServerDescriptor(project: Project) : ProjectWideLspServerDescri
 
     override val lspServerListener = object : LspServerListener {
         override fun serverInitialized(params: InitializeResult) {
+            val formatting = params.capabilities?.documentFormattingProvider ?: false
+            val rangeFormatting = params.capabilities?.documentRangeFormattingProvider ?: false
+            logger.info("Nextflow LSP formatting support: documentFormattingProvider=$formatting, documentRangeFormattingProvider=$rangeFormatting")
+
             val server = LspServerManager.getInstance(project)
                 .getServersForProvider(NextflowLspServerSupportProvider::class.java)
                 .firstOrNull { it.state == LspServerState.Running } ?: return

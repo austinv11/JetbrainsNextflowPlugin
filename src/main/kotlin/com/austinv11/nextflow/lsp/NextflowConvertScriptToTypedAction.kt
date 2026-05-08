@@ -5,6 +5,8 @@ import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.CommonDataKeys
 import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.editor.EditorFactory
+import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.ui.Messages
 import com.intellij.platform.lsp.api.LspServerManager
 import com.intellij.platform.lsp.api.LspServerState
@@ -33,6 +35,20 @@ class NextflowConvertScriptToTypedAction : AnAction() {
         val project = e.project ?: return
         val file = e.getData(CommonDataKeys.VIRTUAL_FILE) ?: return
 
+        // Flush unsaved changes so the server reads positions from the same content
+        // that IntelliJ's in-memory document holds. workspace/applyEdit positions
+        // would be wrong if disk differs from memory when the server builds its AST.
+        FileDocumentManager.getInstance().saveAllDocuments()
+
+        // Move all carets to offset 0 before the command. IntelliJ's workspace/applyEdit
+        // handler uses the caret as a split boundary when the caret falls inside a
+        // replacement range, leaving content after it intact and causing duplication.
+        val document = FileDocumentManager.getInstance().getDocument(file)
+        if (document != null) {
+            EditorFactory.getInstance().getEditors(document, project)
+                .forEach { it.caretModel.moveToOffset(0) }
+        }
+
         val serverManager = LspServerManager.getInstance(project)
         val server = serverManager.getServersForProvider(NextflowLspServerSupportProvider::class.java)
             .firstOrNull { it.state == LspServerState.Running }
@@ -44,7 +60,7 @@ class NextflowConvertScriptToTypedAction : AnAction() {
 
         ApplicationManager.getApplication().executeOnPooledThread {
             try {
-                val result = server.sendRequestSync { languageServer ->
+                server.sendRequestSync { languageServer ->
                     languageServer.workspaceService.executeCommand(
                         ExecuteCommandParams().apply {
                             this.command = "nextflow.server.convertScriptToTyped"
