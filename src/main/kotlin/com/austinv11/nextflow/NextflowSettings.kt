@@ -53,6 +53,10 @@ class NextflowSettings : PersistentStateComponent<NextflowSettings.State> {
         var filesExclude: String = ".git,.nf-test,work",
 
         // Advanced
+
+        // Inspections
+        var ignoreMissingFilesWarning: Boolean = false,
+
         var debugMode: Boolean = false,
     )
 
