@@ -10,6 +10,10 @@ import com.intellij.execution.executors.DefaultDebugExecutor
 import com.intellij.execution.remote.RemoteConfiguration
 import com.intellij.execution.remote.RemoteConfigurationType
 import com.intellij.execution.runners.ExecutionEnvironment
+import com.intellij.execution.runners.ProgramRunner
+import com.intellij.execution.process.ProcessListener
+import com.intellij.execution.process.ProcessEvent
+import com.intellij.openapi.util.Key
 import com.intellij.execution.runners.GenericProgramRunner
 import com.intellij.execution.ui.RunContentDescriptor
 import com.intellij.openapi.application.ApplicationManager
@@ -37,9 +41,27 @@ class NextflowDebugRunner : GenericProgramRunner<RunnerSettings>() {
 
         val executionResult = state.execute(environment.executor, this) ?: return null
 
-        ApplicationManager.getApplication().invokeLater {
-            attachDebugger(environment, port)
-        }
+        val processHandler = executionResult.processHandler
+        processHandler?.addProcessListener(object : ProcessListener {
+            private var attached = false
+            private var buffer = StringBuilder()
+            override fun onTextAvailable(event: ProcessEvent, outputType: Key<*>) {
+                if (attached) return
+                buffer.append(event.text)
+                // Prevent infinite growth if the string is never printed
+                if (buffer.length > 5000) {
+                    buffer.delete(0, 4000)
+                }
+                if (buffer.contains("Listening for transport dt_socket at address:")) {
+                    attached = true
+                    ApplicationManager.getApplication().invokeLater {
+                        attachDebugger(environment, port)
+                    }
+                }
+            }
+            override fun startNotified(event: ProcessEvent) {}
+            override fun processTerminated(event: ProcessEvent) {}
+        })
 
         return com.intellij.execution.runners.showRunContent(executionResult, environment)
     }
@@ -65,10 +87,16 @@ class NextflowDebugRunner : GenericProgramRunner<RunnerSettings>() {
 
             val remoteEnv = remoteEnvBuilder.build()
 
+            // We cannot use 'this' (NextflowDebugRunner) to execute RemoteConfiguration because canRun() fails.
+            // We must find the default GenericDebuggerRunner.
+            val runner = ProgramRunner.getRunner(DefaultDebugExecutor.EXECUTOR_ID, remoteConfig)
+            if (runner == null) {
+                logger.error("Could not find a valid ProgramRunner to execute the RemoteConfiguration.")
+                return
+            }
             val remoteState = remoteConfig.getState(environment.executor, remoteEnv)
-
             if (remoteState != null) {
-                val executionResult = remoteState.execute(environment.executor, this)
+                val executionResult = remoteState.execute(environment.executor, runner)
                 if (executionResult != null) {
                     com.intellij.execution.runners.showRunContent(executionResult, remoteEnv)
                 }
