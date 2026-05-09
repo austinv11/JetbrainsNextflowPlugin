@@ -1,6 +1,7 @@
 package com.austinv11.nextflow.execution
 
 import com.austinv11.nextflow.NextflowSettings
+import com.austinv11.nextflow.util.NextflowEnvironmentUtils
 import com.intellij.execution.ExecutionException
 import com.intellij.execution.configurations.CommandLineState
 import com.intellij.execution.configurations.GeneralCommandLine
@@ -13,6 +14,9 @@ import com.intellij.execution.target.TargetEnvironmentAwareRunProfileState
 import com.intellij.execution.target.TargetEnvironmentRequest
 import com.intellij.execution.target.TargetedCommandLineBuilder
 import com.intellij.openapi.progress.ProgressIndicator
+import com.intellij.openapi.util.Key
+
+val NEXTFLOW_DEBUG_PORT_KEY = Key.create<Int>("NEXTFLOW_DEBUG_PORT")
 
 
 class NextflowRunProfileState(
@@ -28,11 +32,14 @@ class NextflowRunProfileState(
     ) {
         val targetedCommandLineBuilder = TargetedCommandLineBuilder(targetEnvironmentRequest)
 
-        val nextflowBin = NextflowSettings.getInstance(environment.project).state.nextflowBinaryPath.takeIf { it.isNotBlank() } ?: "nextflow"
+        val nextflowBin = NextflowEnvironmentUtils.getNextflowBinary(environment.project)
         targetedCommandLineBuilder.setExePath(nextflowBin)
-
         if (environment.isDebug()) {
             targetedCommandLineBuilder.addParameter("-remote-debug")
+            val debugPort = environment.getUserData(NEXTFLOW_DEBUG_PORT_KEY)
+            if (debugPort != null) {
+                targetedCommandLineBuilder.addEnvironmentVariable("NXF_REMOTE_DEBUG_PORT", debugPort.toString())
+            }
         }
 
         targetedCommandLineBuilder.addParameter("run")
@@ -87,7 +94,7 @@ class NextflowRunProfileState(
     }
 
     private fun startLocalProcess(): ProcessHandler {
-        val nextflowBin = NextflowSettings.getInstance(environment.project).state.nextflowBinaryPath.takeIf { it.isNotBlank() } ?: "nextflow"
+        val nextflowBin = NextflowEnvironmentUtils.getNextflowBinary(environment.project)
 
         val commandLine = if (SystemInfo.isWindows) {
             GeneralCommandLine("wsl", nextflowBin)
@@ -100,11 +107,20 @@ class NextflowRunProfileState(
         if (workDir != null) {
             commandLine.withWorkDirectory(workDir)
         }
-
         // Check if debugging is requested
         if (environment.isDebug()) {
             commandLine.addParameter("-remote-debug")
+            val debugPort = environment.getUserData(NEXTFLOW_DEBUG_PORT_KEY)
+            if (debugPort != null) {
+                commandLine.withEnvironment("NXF_REMOTE_DEBUG_PORT", debugPort.toString())
+                if (SystemInfo.isWindows) {
+                    val existingWslEnv = commandLine.environment["WSLENV"] ?: ""
+                    val wslEnvAddition = if (existingWslEnv.isEmpty()) "NXF_REMOTE_DEBUG_PORT/u" else "$existingWslEnv:NXF_REMOTE_DEBUG_PORT/u"
+                    commandLine.withEnvironment("WSLENV", wslEnvAddition)
+                }
+            }
         }
+
 
         commandLine.addParameter("run")
 
@@ -113,7 +129,7 @@ class NextflowRunProfileState(
             throw ExecutionException("Script path is not specified.")
         }
 
-        commandLine.addParameter(convertToWslPathIfNeeded(scriptPath))
+        commandLine.addParameter(NextflowEnvironmentUtils.convertToWslPathIfNeeded(scriptPath))
 
         val entryName = configuration.entryName
         if (!entryName.isNullOrBlank()) {
@@ -131,7 +147,7 @@ class NextflowRunProfileState(
         if (!parameters.isNullOrBlank()) {
             // Primitive split by space for now
             val paramsList = parameters.split(" ").filter { it.isNotBlank() }
-            commandLine.addParameters(paramsList.map { convertToWslPathIfNeeded(it) })
+            commandLine.addParameters(paramsList.map { NextflowEnvironmentUtils.convertToWslPathIfNeeded(it) })
         }
 
         val arguments = configuration.arguments
@@ -141,24 +157,6 @@ class NextflowRunProfileState(
         }
 
         return ProcessHandlerFactory.getInstance().createColoredProcessHandler(commandLine)
-    }
-
-    private fun convertToWslPathIfNeeded(path: String): String {
-        if (!SystemInfo.isWindows) return path
-
-        // Regex to find things like C:/ or C:\, optionally preceded by '=' or spaces (e.g. --input=C:/...)
-        val regex = Regex("""(^|[^a-zA-Z0-9])([a-zA-Z]):[/\\]""")
-        var result = path
-        // Apply replace and normalise slashes if modified
-        result = result.replace(regex) { matchResult ->
-            val prefix = matchResult.groupValues[1]
-            val drive = matchResult.groupValues[2].lowercase()
-            "$prefix/mnt/$drive/"
-        }
-
-        // Only replace backslashes if the string actually looks like a path and was processed or we are on windows
-        // To be safe we just replace all backslashes with forward slashes since WSL only uses forward slashes
-        return result.replace('\\', '/')
     }
 
     private fun ExecutionEnvironment.isDebug(): Boolean {

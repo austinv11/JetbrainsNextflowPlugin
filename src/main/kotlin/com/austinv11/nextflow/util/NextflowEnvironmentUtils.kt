@@ -1,0 +1,57 @@
+package com.austinv11.nextflow.util
+
+import com.austinv11.nextflow.NextflowSettings
+import com.intellij.openapi.project.Project
+import com.intellij.openapi.util.SystemInfo
+
+object NextflowEnvironmentUtils {
+
+    /**
+     * Retrieves the raw Nextflow binary path from settings, falling back to "nextflow" if empty.
+     */
+    fun getNextflowBinary(project: Project): String {
+        return NextflowSettings.getInstance(project).state.nextflowBinaryPath.takeIf { it.isNotBlank() } ?: "nextflow"
+    }
+
+    /**
+     * Retrieves the executable command string for Nextflow, prepending "wsl " on Windows.
+     */
+    fun getExecutableNextflowCommand(project: Project): String {
+        val bin = getNextflowBinary(project)
+        return if (SystemInfo.isWindows) "wsl $bin" else bin
+    }
+
+    /**
+     * Retrieves the Java executable path from settings, falling back to the system's java.home.
+     */
+    fun getJavaExecutable(project: Project): String {
+        val javaHome = NextflowSettings.getInstance(project).state.javaHome
+        return if (javaHome.isNotBlank()) {
+            "$javaHome/bin/java"
+        } else {
+            System.getProperty("java.home") + "/bin/java"
+        }
+    }
+
+    /**
+     * Converts a Windows path to a WSL path if running on Windows.
+     * e.g., C:/path/to/file -> /mnt/c/path/to/file
+     */
+    fun convertToWslPathIfNeeded(path: String): String {
+        if (!SystemInfo.isWindows) return path
+
+        // Regex to find things like C:/ or C:\, optionally preceded by '=' or spaces (e.g. --input=C:/...)
+        val regex = Regex("""(^|[^a-zA-Z0-9])([a-zA-Z]):[/\\]""")
+        var result = path
+        // Apply replace and normalise slashes if modified
+        result = result.replace(regex) { matchResult ->
+            val prefix = matchResult.groupValues[1]
+            val drive = matchResult.groupValues[2].lowercase()
+            "$prefix/mnt/$drive/"
+        }
+
+        // Only replace backslashes if the string actually looks like a path and was processed or we are on windows
+        // To be safe we just replace all backslashes with forward slashes since WSL only uses forward slashes
+        return result.replace('\\', '/')
+    }
+}

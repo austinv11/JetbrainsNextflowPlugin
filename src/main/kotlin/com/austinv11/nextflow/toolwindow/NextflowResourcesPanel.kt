@@ -1,5 +1,6 @@
 package com.austinv11.nextflow.toolwindow
 
+import com.austinv11.nextflow.util.NextflowFileUtils
 import com.intellij.icons.AllIcons
 import com.intellij.openapi.actionSystem.ActionManager
 import com.intellij.openapi.actionSystem.AnAction
@@ -113,7 +114,7 @@ class NextflowResourcesPanel(private val project: Project) {
                 if (dirNode.childCount > 0) {
                     node.add(dirNode)
                 }
-            } else if (file.name.endsWith(".nf") || file.name == "nextflow.config" || file.name.endsWith(".nf.test")) {
+            } else if (NextflowFileUtils.isNextflowFile(file.name)) {
                 node.add(DefaultMutableTreeNode(file))
             }
         }
@@ -132,7 +133,7 @@ class NextflowResourcesPanel(private val project: Project) {
                     text = file.name
                     icon = if (file.isDirectory) {
                         AllIcons.Nodes.Folder
-                    } else if (file.name.endsWith(".nf.test")) {
+                    } else if (NextflowFileUtils.isNextflowTest(file.name)) {
                         AllIcons.RunConfigurations.TestState.Run
                     } else {
                         NextflowIcons.FILE

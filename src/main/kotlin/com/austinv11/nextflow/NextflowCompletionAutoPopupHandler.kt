@@ -1,5 +1,6 @@
 package com.austinv11.nextflow
 
+import com.austinv11.nextflow.util.NextflowFileUtils
 import com.intellij.codeInsight.AutoPopupController
 import com.intellij.codeInsight.editorActions.TypedHandlerDelegate
 import com.intellij.openapi.editor.Editor
@@ -23,9 +24,7 @@ class NextflowCompletionAutoPopupHandler : TypedHandlerDelegate() {
 
     private fun isNextflowFile(file: PsiFile): Boolean {
         val vf = file.virtualFile
-        if (vf?.extension == "nf") return true
-        if (vf?.name == "nextflow.config") return true
-        if (vf?.name?.endsWith(".nf.test") == true) return true
+        if (vf != null && NextflowFileUtils.isNextflowFile(vf)) return true
         return file.language.id == "Nextflow"
     }
 }

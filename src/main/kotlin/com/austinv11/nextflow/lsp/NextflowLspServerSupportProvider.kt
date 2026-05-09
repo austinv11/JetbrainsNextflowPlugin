@@ -1,5 +1,6 @@
 package com.austinv11.nextflow.lsp
 
+import com.austinv11.nextflow.util.NextflowFileUtils
 import com.austinv11.nextflow.NextflowIcons
 import com.austinv11.nextflow.NextflowSettings
 import com.intellij.ide.BrowserUtil
@@ -25,7 +26,7 @@ class NextflowLspServerSupportProvider : LspServerSupportProvider {
         file: VirtualFile,
         serverStarter: LspServerStarter
     ) {
-        if (file.extension == "nf" || file.name == "nextflow.config") {
+        if (NextflowFileUtils.isNextflowScript(file) || NextflowFileUtils.isNextflowConfig(file)) {
             project.getService(NextflowSchemaWatcher::class.java)
             serverStarter.ensureServerStarted(NextflowLspServerDescriptor(project))
 

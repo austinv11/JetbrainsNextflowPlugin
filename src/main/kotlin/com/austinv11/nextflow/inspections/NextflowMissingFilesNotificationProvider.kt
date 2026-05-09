@@ -1,5 +1,6 @@
 package com.austinv11.nextflow.inspections
 
+import com.austinv11.nextflow.util.NextflowFileUtils
 import com.austinv11.nextflow.NextflowSettings
 import com.intellij.ide.fileTemplates.FileTemplateManager
 import com.intellij.ide.fileTemplates.FileTemplateUtil
@@ -20,7 +21,7 @@ import java.util.Properties
 class NextflowMissingFilesNotificationProvider : EditorNotificationProvider {
     override fun collectNotificationData(project: Project, file: VirtualFile): Function<in FileEditor, out JComponent?>? {
         // Only trigger on Nextflow files
-        if (file.extension != "nf" && file.name != "nextflow.config") {
+        if (!NextflowFileUtils.isNextflowScript(file) && !NextflowFileUtils.isNextflowConfig(file)) {
             return null
         }
 
@@ -33,7 +34,7 @@ class NextflowMissingFilesNotificationProvider : EditorNotificationProvider {
         val projectDir = project.guessProjectDir() ?: return null
 
         val missingMain = projectDir.findChild("main.nf") == null
-        val missingConfig = projectDir.findChild("nextflow.config") == null
+        val missingConfig = projectDir.findChild(NextflowFileUtils.NEXTFLOW_CONFIG_NAME) == null
 
         if (!missingMain && !missingConfig) {
             return null
@@ -44,7 +45,7 @@ class NextflowMissingFilesNotificationProvider : EditorNotificationProvider {
 
             val missingNames = mutableListOf<String>()
             if (missingMain) missingNames.add("main.nf")
-            if (missingConfig) missingNames.add("nextflow.config")
+            if (missingConfig) missingNames.add(NextflowFileUtils.NEXTFLOW_CONFIG_NAME)
 
             val message = "This project is missing typical Nextflow files: " + missingNames.joinToString(" and ") + "."
             panel.text = message

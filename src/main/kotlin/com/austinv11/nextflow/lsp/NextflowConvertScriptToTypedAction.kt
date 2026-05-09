@@ -1,5 +1,6 @@
 package com.austinv11.nextflow.lsp
 
+import com.austinv11.nextflow.util.NextflowFileUtils
 import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
@@ -20,7 +21,7 @@ class NextflowConvertScriptToTypedAction : AnAction() {
         val project = e.project
         val file = e.getData(CommonDataKeys.VIRTUAL_FILE)
 
-        if (project == null || file == null || !(file.extension == "nf" || file.name == "nextflow.config")) {
+        if (project == null || file == null || !(NextflowFileUtils.isNextflowScript(file) || NextflowFileUtils.isNextflowConfig(file))) {
             e.presentation.isEnabledAndVisible = false
             return
         }

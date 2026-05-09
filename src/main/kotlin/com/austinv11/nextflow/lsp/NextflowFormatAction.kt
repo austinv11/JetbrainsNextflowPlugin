@@ -1,5 +1,6 @@
 package com.austinv11.nextflow.lsp
 
+import com.austinv11.nextflow.util.NextflowFileUtils
 import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
@@ -122,7 +123,7 @@ class NextflowFormatAction : AnAction() {
     }
 
     private fun isNextflowFile(file: com.intellij.openapi.vfs.VirtualFile): Boolean {
-        return file.extension == "nf" || file.name == "nextflow.config"
+        return NextflowFileUtils.isNextflowScript(file) || NextflowFileUtils.isNextflowConfig(file)
     }
 
     private data class Edit(val start: Int, val end: Int, val newText: String)

@@ -1,12 +1,12 @@
 package com.austinv11.nextflow.execution
 
 import com.intellij.execution.ExecutionException
+import com.intellij.util.net.NetUtils
+import com.intellij.execution.ExecutionResult
 import com.intellij.execution.configurations.RunProfile
 import com.intellij.execution.configurations.RunProfileState
 import com.intellij.execution.configurations.RunnerSettings
 import com.intellij.execution.executors.DefaultDebugExecutor
-import com.intellij.execution.process.ProcessAdapter
-import com.intellij.execution.process.ProcessEvent
 import com.intellij.execution.remote.RemoteConfiguration
 import com.intellij.execution.remote.RemoteConfigurationType
 import com.intellij.execution.runners.ExecutionEnvironment
@@ -14,8 +14,6 @@ import com.intellij.execution.runners.GenericProgramRunner
 import com.intellij.execution.ui.RunContentDescriptor
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.diagnostic.Logger
-import com.intellij.openapi.util.Key
-import java.util.regex.Pattern
 
 class NextflowDebugRunner : GenericProgramRunner<RunnerSettings>() {
 
@@ -29,30 +27,19 @@ class NextflowDebugRunner : GenericProgramRunner<RunnerSettings>() {
 
     @Throws(ExecutionException::class)
     override fun doExecute(state: RunProfileState, environment: ExecutionEnvironment): RunContentDescriptor? {
+        val port = NetUtils.tryToFindAvailableSocketPort()
+        if (port == -1) {
+            throw ExecutionException("Could not find an available port for debugging.")
+        }
+
+        logger.info("Allocated port $port for Nextflow remote debugging")
+        environment.putUserData(NEXTFLOW_DEBUG_PORT_KEY, port)
+
         val executionResult = state.execute(environment.executor, this) ?: return null
 
-        val processHandler = executionResult.processHandler
-
-        processHandler.addProcessListener(object : ProcessAdapter() {
-            private val debugPortPattern = Pattern.compile("Listening for transport dt_socket at address: (\\d+)")
-
-            override fun onTextAvailable(event: ProcessEvent, outputType: Key<*>) {
-                val text = event.text ?: return
-                val matcher = debugPortPattern.matcher(text)
-                if (matcher.find()) {
-                    val portString = matcher.group(1)
-                    val port = portString.toIntOrNull()
-                    if (port != null) {
-                        logger.info("Found Nextflow debug port: $port")
-                        processHandler.removeProcessListener(this)
-
-                        ApplicationManager.getApplication().invokeLater {
-                            attachDebugger(environment, port)
-                        }
-                    }
-                }
-            }
-        })
+        ApplicationManager.getApplication().invokeLater {
+            attachDebugger(environment, port)
+        }
 
         return com.intellij.execution.runners.showRunContent(executionResult, environment)
     }

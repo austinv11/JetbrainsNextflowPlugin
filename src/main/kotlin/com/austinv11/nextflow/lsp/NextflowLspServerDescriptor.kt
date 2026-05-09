@@ -1,6 +1,8 @@
 package com.austinv11.nextflow.lsp
 
 import com.austinv11.nextflow.NextflowSettings
+import com.austinv11.nextflow.util.NextflowEnvironmentUtils
+import com.austinv11.nextflow.util.NextflowFileUtils
 import com.google.gson.JsonArray
 import com.google.gson.JsonObject
 import com.intellij.execution.configurations.GeneralCommandLine
@@ -27,11 +29,11 @@ class NextflowLspServerDescriptor(project: Project) : ProjectWideLspServerDescri
 
     private val logger = Logger.getInstance(NextflowLspServerDescriptor::class.java)
 
-    override fun isSupportedFile(file: VirtualFile): Boolean = file.extension == "nf" || file.name == "nextflow.config"
+    override fun isSupportedFile(file: VirtualFile): Boolean = NextflowFileUtils.isNextflowScript(file) || NextflowFileUtils.isNextflowConfig(file)
 
     override fun getLanguageId(file: VirtualFile): String = when {
-        file.extension == "nf" -> "nextflow"
-        file.name == "nextflow.config" -> "nextflow-config"
+        NextflowFileUtils.isNextflowScript(file) -> "nextflow"
+        NextflowFileUtils.isNextflowConfig(file) -> "nextflow-config"
         else -> super.getLanguageId(file)
     }
 
@@ -44,17 +46,11 @@ class NextflowLspServerDescriptor(project: Project) : ProjectWideLspServerDescri
             NextflowLspServerDownloader.getOrDownloadLspServer()
                 ?: throw RuntimeException("Failed to locate or download Nextflow LSP server JAR")
         }
-        val nextflowBin = NextflowSettings.getInstance(project).state.nextflowBinaryPath.takeIf { it.isNotBlank() } ?: "nextflow"
-        val actualBin = if (SystemInfo.isWindows) "wsl $nextflowBin" else nextflowBin
+        val actualBin = NextflowEnvironmentUtils.getExecutableNextflowCommand(project)
         val env = mutableMapOf<String, String>()
         env.putAll(System.getenv())
         env["NEXTFLOW_BIN"] = actualBin
-        val javaHome = NextflowSettings.getInstance(project).state.javaHome
-        val javaExe = if (javaHome.isNotBlank()) {
-            "$javaHome/bin/java"
-        } else {
-            System.getProperty("java.home") + "/bin/java"
-        }
+        val javaExe = NextflowEnvironmentUtils.getJavaExecutable(project)
         return GeneralCommandLine(javaExe, "-jar", serverJar.absolutePath).withEnvironment(env)
     }
 
