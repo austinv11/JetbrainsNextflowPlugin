@@ -9,87 +9,17 @@ import com.intellij.execution.process.ProcessHandler
 import com.intellij.execution.process.ProcessHandlerFactory
 import com.intellij.execution.runners.ExecutionEnvironment
 import com.intellij.openapi.util.SystemInfo
-import com.intellij.execution.target.TargetEnvironmentConfiguration
-import com.intellij.execution.target.TargetEnvironmentAwareRunProfileState
-import com.intellij.execution.target.TargetEnvironmentRequest
-import com.intellij.execution.target.TargetedCommandLineBuilder
 import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.util.Key
 
 val NEXTFLOW_DEBUG_PORT_KEY = Key.create<Int>("NEXTFLOW_DEBUG_PORT")
 
-
 class NextflowRunProfileState(
     environment: ExecutionEnvironment,
     private val configuration: NextflowRunConfiguration
-) : CommandLineState(environment), TargetEnvironmentAwareRunProfileState {
-
-    private var targetCommandLineBuilder: TargetedCommandLineBuilder? = null
-
-    override fun prepareTargetEnvironmentRequest(
-        targetEnvironmentRequest: TargetEnvironmentRequest,
-        targetProgressIndicator: com.intellij.execution.target.TargetProgressIndicator
-    ) {
-        val targetedCommandLineBuilder = TargetedCommandLineBuilder(targetEnvironmentRequest)
-
-        val nextflowBin = NextflowEnvironmentUtils.getNextflowBinary(environment.project)
-        targetedCommandLineBuilder.setExePath(nextflowBin)
-        if (environment.isDebug()) {
-            targetedCommandLineBuilder.addParameter("-remote-debug")
-            val debugPort = environment.getUserData(NEXTFLOW_DEBUG_PORT_KEY)
-            if (debugPort != null) {
-                targetedCommandLineBuilder.addEnvironmentVariable("NXF_REMOTE_DEBUG_PORT", debugPort.toString())
-            }
-        }
-
-        targetedCommandLineBuilder.addParameter("run")
-
-        val scriptPath = configuration.scriptPath
-        if (scriptPath.isNullOrBlank()) {
-            throw ExecutionException("Script path is not specified.")
-        }
-
-        targetedCommandLineBuilder.addParameter(scriptPath)
-
-        val entryName = configuration.entryName
-        if (!entryName.isNullOrBlank()) {
-            targetedCommandLineBuilder.addParameter("-entry")
-            targetedCommandLineBuilder.addParameter(entryName)
-        }
-
-        val profiles = configuration.profiles
-        if (!profiles.isNullOrBlank()) {
-            targetedCommandLineBuilder.addParameter("-profile")
-            targetedCommandLineBuilder.addParameter(profiles)
-        }
-
-        val parameters = configuration.parameters
-        if (!parameters.isNullOrBlank()) {
-            val paramsList = parameters.split(" ").filter { it.isNotBlank() }
-            paramsList.forEach { targetedCommandLineBuilder.addParameter(it) }
-        }
-
-        val arguments = configuration.arguments
-        if (!arguments.isNullOrBlank()) {
-            val argsList = arguments.split(" ").filter { it.isNotBlank() }
-            argsList.forEach { targetedCommandLineBuilder.addParameter(it) }
-        }
-
-        this.targetCommandLineBuilder = targetedCommandLineBuilder
-    }
-
-    override fun handleCreatedTargetEnvironment(
-        targetEnvironment: com.intellij.execution.target.TargetEnvironment,
-        targetProgressIndicator: com.intellij.execution.target.TargetProgressIndicator
-    ) {
-        // Setup done after environment is built
-    }
+) : CommandLineState(environment) {
 
     override fun startProcess(): ProcessHandler {
-        val targetedBuilder = targetCommandLineBuilder
-        if (targetedBuilder != null) {
-            throw ExecutionException("Nextflow Target environment execution requires starting via TargetEnvironmentRunner in newer IntelliJ versions.")
-        }
         return startLocalProcess()
     }
 
@@ -120,7 +50,6 @@ class NextflowRunProfileState(
                 }
             }
         }
-
 
         commandLine.addParameter("run")
 

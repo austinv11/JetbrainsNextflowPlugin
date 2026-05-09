@@ -8,14 +8,12 @@ import com.intellij.execution.configurations.RunProfileState
 import com.intellij.execution.runners.ExecutionEnvironment
 import com.intellij.openapi.options.SettingsEditor
 import com.intellij.openapi.project.Project
-import com.intellij.execution.target.TargetEnvironmentAwareRunProfile
-import com.intellij.execution.target.TargetEnvironmentConfiguration
 
 class NextflowRunConfiguration(
     project: Project,
     factory: ConfigurationFactory,
     name: String
-) : LocatableConfigurationBase<NextflowRunConfigurationOptions>(project, factory, name), TargetEnvironmentAwareRunProfile {
+) : LocatableConfigurationBase<NextflowRunConfigurationOptions>(project, factory, name) {
 
     var scriptPath: String?
         get() = options.scriptPath
@@ -65,19 +63,4 @@ class NextflowRunConfiguration(
         return NextflowRunProfileState(environment, this)
     }
 
-    override fun canRunOn(target: TargetEnvironmentConfiguration): Boolean {
-        return true
-    }
-
-    override fun getDefaultLanguageRuntimeType(): com.intellij.execution.target.LanguageRuntimeType<*>? {
-        return null
-    }
-
-    override fun getDefaultTargetName(): String? {
-        return options.remoteTarget
-    }
-
-    override fun setDefaultTargetName(targetName: String?) {
-        options.remoteTarget = targetName
-    }
 }

@@ -12,6 +12,7 @@ import com.intellij.platform.lsp.api.LspServerListener
 import com.intellij.platform.lsp.api.LspServerManager
 import com.intellij.platform.lsp.api.LspServerState
 import com.intellij.platform.lsp.api.ProjectWideLspServerDescriptor
+import com.intellij.platform.lsp.api.customization.LspCustomization
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.util.SystemInfo
 import org.eclipse.lsp4j.ConfigurationItem
@@ -155,8 +156,7 @@ class NextflowLspServerDescriptor(project: Project) : ProjectWideLspServerDescri
         }
     }
 
-    override val lspCommandsSupport = NextflowLspCommandsSupport()
-    override val lspCompletionSupport = NextflowLspCompletionSupport()
+    override val lspCustomization: LspCustomization = NextflowLspCustomization()
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true

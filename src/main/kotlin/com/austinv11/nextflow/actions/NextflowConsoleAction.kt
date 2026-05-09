@@ -14,9 +14,8 @@ class NextflowConsoleAction : AnAction("Nextflow Console", "Launch an interactiv
 
         try {
             val terminalManager = TerminalToolWindowManager.getInstance(project)
-            @Suppress("DEPRECATION")
-            val widget = terminalManager.createLocalShellWidget(project.basePath, "Nextflow Console")
-            widget.executeCommand("$actualBin console")
+            val widget = terminalManager.createShellWidget(project.basePath, "Nextflow Console", true, true)
+            (widget as org.jetbrains.plugins.terminal.ShellTerminalWidget).executeCommand("$actualBin console")
 
             val toolWindowManager = ToolWindowManager.getInstance(project)
             val terminalWindow = toolWindowManager.getToolWindow("Terminal")

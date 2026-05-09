@@ -20,23 +20,21 @@ class NextflowRunConfigurationEditor(private val project: Project) : SettingsEdi
     private val argumentsField = JBTextField()
     private val workDirField = TextFieldWithBrowseButton()
     // To support Target Environments gracefully in standard settings editor without fragments:
-    private val targetEnvironmentCombo = com.intellij.execution.target.TargetEnvironmentsConfigurable(project)
+
 
     init {
         scriptPathField.addBrowseFolderListener(
-            "Select Nextflow Script",
-            "Select the main .nf file to run",
-            null,
-            FileChooserDescriptorFactory.createSingleFileDescriptor("nf"),
-            TextComponentAccessor.TEXT_FIELD_WHOLE_TEXT
+            project,
+            FileChooserDescriptorFactory.createSingleFileDescriptor("nf")
+                .withTitle("Select Nextflow Script")
+                .withDescription("Select the main .nf file to run")
         )
 
         workDirField.addBrowseFolderListener(
-            "Select Working Directory",
-            "Select the directory where Nextflow will execute",
-            null,
-            FileChooserDescriptorFactory.createSingleFolderDescriptor(),
-            TextComponentAccessor.TEXT_FIELD_WHOLE_TEXT
+            project,
+            FileChooserDescriptorFactory.createSingleFolderDescriptor()
+                .withTitle("Select Working Directory")
+                .withDescription("Select the directory where Nextflow will execute")
         )
     }
 
