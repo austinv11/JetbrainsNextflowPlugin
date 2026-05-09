@@ -41,7 +41,7 @@ dependencies {
         testFramework(org.jetbrains.intellij.platform.gradle.TestFrameworkType.Platform)
     }
 
-    compileOnly("com.jetbrains.intellij.platform:lsp:241.14494.240")
+    compileOnly("com.jetbrains.intellij.platform:lsp:252.23892.409")
 
     testImplementation("junit:junit:4.13.2")
     testImplementation("org.junit.vintage:junit-vintage-engine:5.10.2")
@@ -70,7 +70,7 @@ intellijPlatform {
             name = "austinv11"
         }
         ideaVersion {
-            sinceBuild = "241.0"
+            sinceBuild = "252.0"
         }
 
         changeNotes = provider {
