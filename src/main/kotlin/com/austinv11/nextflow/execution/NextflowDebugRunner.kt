@@ -10,14 +10,14 @@ import com.intellij.execution.process.ProcessEvent
 import com.intellij.execution.remote.RemoteConfiguration
 import com.intellij.execution.remote.RemoteConfigurationType
 import com.intellij.execution.runners.ExecutionEnvironment
-import com.intellij.execution.runners.ProgramRunner
+import com.intellij.execution.runners.GenericProgramRunner
 import com.intellij.execution.ui.RunContentDescriptor
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.util.Key
 import java.util.regex.Pattern
 
-class NextflowDebugRunner : ProgramRunner<RunnerSettings> {
+class NextflowDebugRunner : GenericProgramRunner<RunnerSettings>() {
 
     private val logger = Logger.getInstance(NextflowDebugRunner::class.java)
 
@@ -27,28 +27,10 @@ class NextflowDebugRunner : ProgramRunner<RunnerSettings> {
         return executorId == DefaultDebugExecutor.EXECUTOR_ID && profile is NextflowRunConfiguration
     }
 
-    override fun execute(environment: ExecutionEnvironment) {
-        execute(environment, null)
-    }
-
-    override fun execute(environment: ExecutionEnvironment, callback: ProgramRunner.Callback?) {
-        ApplicationManager.getApplication().invokeLater {
-            try {
-                val state = environment.state ?: return@invokeLater
-                val descriptor = doExecute(environment, state)
-                if (descriptor != null && callback != null) {
-                    callback.processStarted(descriptor)
-                }
-            } catch (e: ExecutionException) {
-                logger.error("Failed to start debug execution", e)
-            }
-        }
-    }
-
     @Throws(ExecutionException::class)
-    fun doExecute(environment: ExecutionEnvironment, state: RunProfileState): RunContentDescriptor? {
+    override fun doExecute(state: RunProfileState, environment: ExecutionEnvironment): RunContentDescriptor? {
         val executionResult = state.execute(environment.executor, this) ?: return null
-        
+
         val processHandler = executionResult.processHandler
 
         processHandler.addProcessListener(object : ProcessAdapter() {
@@ -87,26 +69,26 @@ class NextflowDebugRunner : ProgramRunner<RunnerSettings> {
             remoteConfig.PORT = port.toString()
             remoteConfig.USE_SOCKET_TRANSPORT = true
             remoteConfig.SERVER_MODE = false
-            
+
             val remoteEnvBuilder = com.intellij.execution.runners.ExecutionEnvironmentBuilder.create(
                 environment.project,
                 environment.executor,
                 remoteConfig
             )
-            
+
             val remoteEnv = remoteEnvBuilder.build()
-            
+
             val remoteState = remoteConfig.getState(environment.executor, remoteEnv)
-            
+
             if (remoteState != null) {
                 val executionResult = remoteState.execute(environment.executor, this)
                 if (executionResult != null) {
-                   com.intellij.execution.runners.showRunContent(executionResult, remoteEnv)
+                    com.intellij.execution.runners.showRunContent(executionResult, remoteEnv)
                 }
             }
 
         } catch (e: ExecutionException) {
-             logger.error("Failed to attach remote debugger to port $port", e)
+            logger.error("Failed to attach remote debugger to port $port", e)
         }
     }
 }
