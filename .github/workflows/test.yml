@@ -8,8 +8,38 @@ on:
   pull_request:
 
 jobs:
+  prepare-resources:
+    name: Prepare Downloaded Resources
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: 21
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          cache-disabled: false
+
+      - name: Download Resources
+        run: ./gradlew downloadMermaid downloadTextmateBundles
+
+      - name: Cache Generated Resources
+        uses: actions/cache@v4
+        with:
+          path: |
+            src/main/resources/mermaid
+            src/main/resources/textmate
+          key: generated-resources-${{ github.run_id }}
+
   test:
     name: Test (${{ matrix.os }}, Java ${{ matrix.java }})
+    needs: prepare-resources
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -31,6 +61,14 @@ jobs:
         uses: gradle/actions/setup-gradle@v4
         with:
           cache-disabled: false
+
+      - name: Restore Generated Resources
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            src/main/resources/mermaid
+            src/main/resources/textmate
+          key: generated-resources-${{ github.run_id }}
 
       - name: Run Tests with Coverage
         run: ./gradlew test jacocoTestReport
