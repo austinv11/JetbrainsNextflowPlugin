@@ -117,6 +117,10 @@ tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
 tasks.test {
     useJUnitPlatform()
     finalizedBy(tasks.jacocoTestReport)
+    extensions.configure(JacocoTaskExtension::class.java) {
+        isIncludeNoLocationClasses = true
+        excludes = listOf("jdk.internal.*")
+    }
 }
 
 tasks.jacocoTestReport {
@@ -132,6 +136,7 @@ val downloadMermaid by tasks.registering {
     val outputDir = layout.projectDirectory.dir("src/main/resources/mermaid")
     val outputFile = outputDir.file("mermaid.min.js")
     outputs.file(outputFile)
+    onlyIf { !outputFile.asFile.exists() }
     doLast {
         outputDir.asFile.mkdirs()
         val url = URI.create("https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js").toURL()
@@ -157,6 +162,7 @@ val downloadTextmateBundles by tasks.registering {
 
     // We register the whole directory as the output since the contents are dynamic
     outputs.dir(outputDir)
+    onlyIf { !outputDir.asFile.exists() || outputDir.asFile.list()?.isEmpty() == true }
 
     doLast {
         outputDir.asFile.mkdirs()
