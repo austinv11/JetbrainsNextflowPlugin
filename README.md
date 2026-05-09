@@ -2,7 +2,7 @@
 
 ![Version](https://img.shields.io/badge/version-latest-blue.svg)
 ![License](https://img.shields.io/badge/license-MIT-green.svg)
-![JetBrains Plugin](https://img.shields.io/badge/JetBrains-Plugin-orange.svg)
+[![JetBrains Plugin](https://img.shields.io/badge/JetBrains-Plugin-orange.svg)](https://plugins.jetbrains.com/plugin/31666-nextflow-support)
 
 Basic plugin to add support for the official Nextflow Language Server Protocol (LSP) implementation in JetBrains IDEs like IntelliJ IDEA, PyCharm, WebStorm, and others.
 
