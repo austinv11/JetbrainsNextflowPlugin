@@ -6,6 +6,7 @@ import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.wm.ToolWindowManager
 import org.jetbrains.plugins.terminal.TerminalToolWindowManager
+import org.jetbrains.plugins.terminal.TerminalTabState
 
 class NextflowConsoleAction : AnAction("Nextflow Console", "Launch an interactive Nextflow console", NextflowIcons.FILE) {
     override fun actionPerformed(e: AnActionEvent) {
@@ -14,8 +15,13 @@ class NextflowConsoleAction : AnAction("Nextflow Console", "Launch an interactiv
 
         try {
             val terminalManager = TerminalToolWindowManager.getInstance(project)
-            val widget = terminalManager.createShellWidget(project.basePath, "Nextflow Console", true, true)
-            (widget as org.jetbrains.plugins.terminal.ShellTerminalWidget).executeCommand("$actualBin console")
+            val runner = terminalManager.terminalRunner
+            val tabState = TerminalTabState().apply {
+                myTabName = "Nextflow Console"
+                myWorkingDirectory = project.basePath
+            }
+            val widget = terminalManager.createNewSession(runner, tabState, null)
+            widget.sendCommandToExecute("$actualBin console")
 
             val toolWindowManager = ToolWindowManager.getInstance(project)
             val terminalWindow = toolWindowManager.getToolWindow("Terminal")
