@@ -18,6 +18,7 @@ import com.intellij.execution.runners.GenericProgramRunner
 import com.intellij.execution.ui.RunContentDescriptor
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.diagnostic.Logger
+import com.intellij.execution.ExecutionManager
 
 class NextflowDebugRunner : GenericProgramRunner<RunnerSettings>() {
 
@@ -47,16 +48,20 @@ class NextflowDebugRunner : GenericProgramRunner<RunnerSettings>() {
             private var buffer = StringBuilder()
             override fun onTextAvailable(event: ProcessEvent, outputType: Key<*>) {
                 if (attached) return
-                buffer.append(event.text)
-                // Prevent infinite growth if the string is never printed
-                if (buffer.length > 5000) {
-                    buffer.delete(0, 4000)
-                }
-                if (buffer.contains("Listening for transport dt_socket at address:")) {
+
+                // Strip ANSI escape codes
+                val text = event.text.replace(Regex("\\x1B\\[[0-9;]*[a-zA-Z]"), "")
+                buffer.append(text)
+
+                val currentText = buffer.toString()
+                if (currentText.contains("Listening for transport dt_socket at address:") || currentText.contains("Listening for transport dt_socket")) {
                     attached = true
                     ApplicationManager.getApplication().invokeLater {
                         attachDebugger(environment, port)
                     }
+                } else if (buffer.length > 8192) {
+                    // Truncate from the beginning but keep the last few hundred characters
+                    buffer.delete(0, buffer.length - 1000)
                 }
             }
             override fun startNotified(event: ProcessEvent) {}
@@ -79,6 +84,9 @@ class NextflowDebugRunner : GenericProgramRunner<RunnerSettings>() {
             remoteConfig.USE_SOCKET_TRANSPORT = true
             remoteConfig.SERVER_MODE = false
 
+            // Name the configuration dynamically to provide context
+            remoteConfig.name = "Nextflow Auto-Attach Debug"
+
             val remoteEnvBuilder = com.intellij.execution.runners.ExecutionEnvironmentBuilder.create(
                 environment.project,
                 environment.executor,
@@ -94,13 +102,9 @@ class NextflowDebugRunner : GenericProgramRunner<RunnerSettings>() {
                 logger.error("Could not find a valid ProgramRunner to execute the RemoteConfiguration.")
                 return
             }
-            val remoteState = remoteConfig.getState(environment.executor, remoteEnv)
-            if (remoteState != null) {
-                val executionResult = remoteState.execute(environment.executor, runner)
-                if (executionResult != null) {
-                    com.intellij.execution.runners.showRunContent(executionResult, remoteEnv)
-                }
-            }
+
+            // Ensure the remoteEnv runner is properly set
+            runner.execute(remoteEnv)
 
         } catch (e: ExecutionException) {
             logger.error("Failed to attach remote debugger to port $port", e)
