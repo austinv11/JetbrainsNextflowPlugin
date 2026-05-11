@@ -2,26 +2,23 @@ package com.austinv11.nextflow.project
 
 import com.austinv11.nextflow.NextflowIcons
 import com.intellij.ide.wizard.AbstractNewProjectWizardStep
-import com.intellij.ide.wizard.GeneratorNewProjectWizard
 import com.intellij.ide.wizard.NewProjectWizardStep
+import com.intellij.ide.wizard.language.LanguageGeneratorNewProjectWizard
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.guessProjectDir
-import com.intellij.ide.wizard.LanguageNewProjectWizard
-import com.intellij.ide.wizard.NewProjectWizardLanguageStep
 import javax.swing.Icon
 
-class NextflowProjectWizard : LanguageNewProjectWizard {
+class NextflowProjectWizard : LanguageGeneratorNewProjectWizard {
     override val name: String = "Nextflow"
     override val ordinal: Int = 100
+    override val icon: Icon = NextflowIcons.FILE
 
-    @Suppress("DEPRECATION")
-    override fun createStep(parent: NewProjectWizardLanguageStep): NewProjectWizardStep {
+    override fun createStep(parent: NewProjectWizardStep): NewProjectWizardStep {
         return Step(parent)
     }
 
-    @Suppress("DEPRECATION")
-    class Step(parent: NewProjectWizardLanguageStep) : AbstractNewProjectWizardStep(parent) {
+    class Step(parent: NewProjectWizardStep) : AbstractNewProjectWizardStep(parent) {
         override fun setupProject(project: Project) {
             val baseDir = project.guessProjectDir() ?: return
 
