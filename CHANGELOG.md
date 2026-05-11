@@ -5,11 +5,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+
+## [1.0.2]
+
 ### Added
 
-
 ### Changed
-
+- Fixed plugin verifier compatibility issue with Terminal API for IDEA versions 2025.3+
+- Fixed override-only API usage violation for `NextflowLspCustomization`
+- Fixed deprecated `doNotActivateOnStart` toolWindow property usage
 
 ### Removed
 

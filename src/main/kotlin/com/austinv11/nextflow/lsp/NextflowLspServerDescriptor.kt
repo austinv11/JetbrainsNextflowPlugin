@@ -156,7 +156,10 @@ class NextflowLspServerDescriptor(project: Project) : ProjectWideLspServerDescri
         }
     }
 
-    override val lspCustomization: LspCustomization = NextflowLspCustomization()
+    override val lspCustomization = object : LspCustomization() {
+        override val commandsCustomizer = NextflowLspCommandsSupport()
+        override val completionCustomizer = NextflowLspCompletionSupport()
+    }
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true

@@ -23,8 +23,8 @@ object NfCoreRunner {
                 myTabName = "nf-core: $displayName"
                 myWorkingDirectory = project.basePath
             }
-            val widget = terminalManager.createNewSession(runner, tabState, null)
-            widget.sendCommandToExecute(command)
+            val widget = terminalManager.createLocalShellWidget(project.basePath, tabState.myTabName)
+            widget.executeCommand(command)
 
             val toolWindowManager = ToolWindowManager.getInstance(project)
             val terminalWindow = toolWindowManager.getToolWindow("Terminal")
