@@ -74,6 +74,8 @@ intellijPlatform {
             sinceBuild = "252.0"
         }
 
+        description = provider { org.jetbrains.changelog.markdownToHTML(layout.projectDirectory.file("DESCRIPTION.md").asFile.readText()) }
+
         changeNotes = provider {
             changelog.renderItem(
                 changelog.getOrNull(project.version.toString())
