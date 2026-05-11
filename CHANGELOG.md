@@ -5,6 +5,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.3]
+
+### Added
+
+### Changed
+- Bump minimum supported version to 2026.1
+
+### Removed
+
+
 
 ## [1.0.2]
 
