@@ -27,6 +27,8 @@ jobs:
           cache-disabled: false
 
       - name: Download Resources
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: ./gradlew downloadMermaid downloadTextmateBundles
 
       - name: Cache Generated Resources
@@ -71,6 +73,8 @@ jobs:
           key: generated-resources-${{ github.run_id }}
 
       - name: Run Tests with Coverage
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: ./gradlew test jacocoTestReport
 
       - name: Upload JaCoCo XML Report

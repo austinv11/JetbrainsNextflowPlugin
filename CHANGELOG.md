@@ -6,7 +6,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- Setup automatic changelog generation.
+
+
+### Changed
+
+
+### Removed
+
+
+## [1.0.0]
+
+Initial full release with official Nextflow LSP Support, Complete IDEA integration, experimental nf-core support, and more.
 
 ## [1.0-SNAPSHOT]
 

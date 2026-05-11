@@ -175,10 +175,14 @@ val downloadTextmateBundles by tasks.registering {
         // Use the GitHub API to dynamically list the contents of the directory
         val apiUrl = URI.create("https://api.github.com/repos/nextflow-io/vscode-language-nextflow/contents/syntaxes").toURL()
 
+        val githubToken = System.getenv("GITHUB_TOKEN")
         val connection = (apiUrl.openConnection() as HttpURLConnection).apply {
             setRequestProperty("Accept", "application/vnd.github.v3+json")
             // GitHub API requires a User-Agent header
             setRequestProperty("User-Agent", "Nextflow-IntelliJ-Plugin-Build")
+            if (!githubToken.isNullOrBlank()) {
+                setRequestProperty("Authorization", "Bearer $githubToken")
+            }
             connectTimeout = 15000
             readTimeout = 15000
         }
@@ -205,6 +209,9 @@ val downloadTextmateBundles by tasks.registering {
                 println("Downloading syntax bundle: $name")
                 val downloadConnection = (URI.create(downloadUrlStr).toURL().openConnection() as HttpURLConnection).apply {
                     setRequestProperty("User-Agent", "Nextflow-IntelliJ-Plugin-Build")
+                    if (!githubToken.isNullOrBlank()) {
+                        setRequestProperty("Authorization", "Bearer $githubToken")
+                    }
                     connectTimeout = 15000
                     readTimeout = 15000
                 }
