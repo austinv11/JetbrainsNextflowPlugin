@@ -22,6 +22,11 @@ import javax.swing.tree.DefaultMutableTreeNode
 import javax.swing.tree.DefaultTreeModel
 import java.awt.BorderLayout
 import java.io.File
+
+import java.util.Timer
+import java.util.TimerTask
+import java.io.RandomAccessFile
+
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
 import com.intellij.openapi.actionSystem.ActionManager
@@ -33,7 +38,7 @@ import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.openapi.ide.CopyPasteManager
 import java.awt.datatransfer.StringSelection
 
-class NextflowConsoleView(val project: Project, val rawConsole: ConsoleView) : ConsoleView {
+class NextflowConsoleView(val project: Project, val rawConsole: ConsoleView, val runDir: String? = null) : ConsoleView {
 
     private val mainPanel = JPanel(BorderLayout())
     private val tabbedPane = JBTabbedPane()
@@ -45,6 +50,11 @@ class NextflowConsoleView(val project: Project, val rawConsole: ConsoleView) : C
 
     // Log Viewer for tasks
     private val logTextArea = JTextArea()
+
+    // Log Tailer
+    private var logTailTimer: Timer? = null
+    private var lastLogPosition: Long = 0
+
 
     // Maps
     private val processNodes = mutableMapOf<String, DefaultMutableTreeNode>()
@@ -114,11 +124,17 @@ class NextflowConsoleView(val project: Project, val rawConsole: ConsoleView) : C
         // Tree Selection Listener to load logs
         tree.addTreeSelectionListener { e ->
             val node = tree.lastSelectedPathComponent as? DefaultMutableTreeNode
+
+            // Stop any existing tailer when selection changes
+            stopLogTail()
+
             if (node != null) {
                 val nodeData = node.userObject
                 if (nodeData is NextflowTaskData) {
                     loadTaskLogs(nodeData)
-                } else if (nodeData is String && nodeData != "Nextflow Run") {
+                } else if (nodeData is String && nodeData == "Nextflow Run") {
+                    loadRunLogs()
+                } else if (nodeData is String) {
                     loadProcessLogs(node)
                 } else {
                     logTextArea.text = ""
@@ -182,6 +198,64 @@ class NextflowConsoleView(val project: Project, val rawConsole: ConsoleView) : C
                 popupMenu.component.show(tree, e.x, e.y)
             }
         })
+    }
+
+    private fun loadRunLogs() {
+        logTextArea.text = ""
+        val dir = runDir ?: project.basePath ?: return
+        val convertedDir = com.austinv11.nextflow.util.NextflowEnvironmentUtils.convertFromWslPathIfNeeded(dir)
+        val logFile = File(convertedDir, ".nextflow.log")
+
+        if (!logFile.exists()) {
+            logTextArea.text = "Waiting for .nextflow.log to be created at ${logFile.absolutePath}...\n"
+        } else {
+            // Read initial content
+            try {
+                logTextArea.text = logFile.readText()
+                lastLogPosition = logFile.length()
+            } catch (e: Exception) {
+                logTextArea.text = "Error reading log: ${e.message}\n"
+            }
+        }
+
+        logTailTimer = Timer("NextflowLogTailer", true).apply {
+            scheduleAtFixedRate(object : TimerTask() {
+                override fun run() {
+                    if (!logFile.exists()) return
+
+                    try {
+                        val currentLen = logFile.length()
+                        if (currentLen > lastLogPosition) {
+                            RandomAccessFile(logFile, "r").use { raf ->
+                                raf.seek(lastLogPosition)
+                                val bytesToRead = (currentLen - lastLogPosition).toInt()
+                                val buffer = ByteArray(bytesToRead)
+                                raf.readFully(buffer)
+                                val newText = String(buffer, Charsets.UTF_8)
+
+                                SwingUtilities.invokeLater {
+                                    logTextArea.append(newText)
+                                    // Optional: auto-scroll to bottom
+                                    // logTextArea.caretPosition = logTextArea.document.length
+                                }
+                                lastLogPosition = currentLen
+                            }
+                        } else if (currentLen < lastLogPosition) {
+                            // File was rotated or truncated
+                            lastLogPosition = 0
+                        }
+                    } catch (e: Exception) {
+                        // Ignore read errors during tail
+                    }
+                }
+            }, 1000, 1000)
+        }
+    }
+
+    private fun stopLogTail() {
+        logTailTimer?.cancel()
+        logTailTimer = null
+        lastLogPosition = 0
     }
 
     private fun formatDuration(durationMs: Long): String {
@@ -280,6 +354,7 @@ class NextflowConsoleView(val project: Project, val rawConsole: ConsoleView) : C
     }
 
     override fun dispose() {
+        stopLogTail()
         rawConsole.dispose()
     }
 

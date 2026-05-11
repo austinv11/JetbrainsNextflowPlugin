@@ -48,7 +48,8 @@ class NextflowRunProfileState(
         })
 
         val console = createConsole(executor)
-        val customConsole = NextflowConsoleView(environment.project, console!!)
+        val workDir = configuration.workDir.takeIf { !it.isNullOrBlank() } ?: environment.project.basePath
+        val customConsole = NextflowConsoleView(environment.project, console!!, workDir)
         customConsole.attachToProcess(processHandler)
 
         // Pass events from server to custom console
