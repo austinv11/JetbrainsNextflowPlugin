@@ -9,7 +9,10 @@ import org.jetbrains.plugins.terminal.TerminalTabState
 object NfCoreRunner {
     fun executeAction(project: Project, action: NfCoreAction) {
         val args = getArgsForAction(project, action) ?: return
+        executeCommandArgs(project, action.displayName, args)
+    }
 
+    fun executeCommandArgs(project: Project, displayName: String, args: List<String>) {
         val actualBin = NextflowEnvironmentUtils.getExecutableNfCoreCommand(project)
         val command = "$actualBin ${args.joinToString(" ")}"
 
@@ -17,7 +20,7 @@ object NfCoreRunner {
             val terminalManager = TerminalToolWindowManager.getInstance(project)
             val runner = terminalManager.terminalRunner
             val tabState = TerminalTabState().apply {
-                myTabName = "nf-core: ${action.displayName}"
+                myTabName = "nf-core: $displayName"
                 myWorkingDirectory = project.basePath
             }
             val widget = terminalManager.createNewSession(runner, tabState, null)
@@ -39,6 +42,10 @@ object NfCoreRunner {
             }
             "download" -> {
                 val dialog = DownloadPipelineDialog(project)
+                if (dialog.showAndGet()) return dialog.getCommandArguments()
+            }
+            "launch" -> {
+                val dialog = LaunchPipelineDialog(project)
                 if (dialog.showAndGet()) return dialog.getCommandArguments()
             }
             "lint" -> {

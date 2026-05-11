@@ -97,8 +97,8 @@ class SubworkflowsCreateDialog(project: Project) : NfCoreDialogWrapper(project, 
     }
 }
 
-class ManageItemDialog(project: Project, private val actionType: String, private val itemType: String) : NfCoreDialogWrapper(project, "$actionType $itemType") {
-    var itemName: String = ""
+class ManageItemDialog(project: Project, private val actionType: String, private val itemType: String, initialItemName: String = "") : NfCoreDialogWrapper(project, "$actionType $itemType") {
+    var itemName: String = initialItemName
 
     init {
         init()
@@ -117,8 +117,8 @@ class ManageItemDialog(project: Project, private val actionType: String, private
     }
 }
 
-class DownloadPipelineDialog(project: Project) : NfCoreDialogWrapper(project, "Download Pipeline") {
-    var pipelineName: String = ""
+class DownloadPipelineDialog(project: Project, initialPipelineName: String = "") : NfCoreDialogWrapper(project, "Download Pipeline") {
+    var pipelineName: String = initialPipelineName
     var revision: String = ""
     var outdir: String = ""
 
@@ -144,6 +144,32 @@ class DownloadPipelineDialog(project: Project) : NfCoreDialogWrapper(project, "D
         val args = mutableListOf("download", pipelineName)
         if (revision.isNotBlank()) args.addAll(listOf("-r", revision))
         if (outdir.isNotBlank()) args.addAll(listOf("-o", outdir))
+        return args
+    }
+}
+
+class LaunchPipelineDialog(project: Project, initialPipelineName: String = "") : NfCoreDialogWrapper(project, "Launch Pipeline") {
+    var pipelineName: String = initialPipelineName
+    var revision: String = ""
+
+    init {
+        init()
+    }
+
+    override fun createCenterPanel(): JComponent {
+        return panel {
+            row("Pipeline Name:") {
+                textField().bindText(::pipelineName).focused()
+            }
+            row("Revision (Optional):") {
+                textField().bindText(::revision)
+            }
+        }
+    }
+
+    override fun getCommandArguments(): List<String> {
+        val args = mutableListOf("launch", pipelineName)
+        if (revision.isNotBlank()) args.addAll(listOf("-r", revision))
         return args
     }
 }

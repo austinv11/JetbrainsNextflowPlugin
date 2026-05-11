@@ -23,6 +23,7 @@ class NfCorePanel(private val project: Project) {
         val pipelinesNode = DefaultMutableTreeNode("Pipelines")
         pipelinesNode.add(DefaultMutableTreeNode(NfCoreAction("Create Pipeline", "create")))
         pipelinesNode.add(DefaultMutableTreeNode(NfCoreAction("Download Pipeline", "download")))
+        pipelinesNode.add(DefaultMutableTreeNode(NfCoreAction("Launch Pipeline", "launch")))
         pipelinesNode.add(DefaultMutableTreeNode(NfCoreAction("Lint Pipeline", "lint")))
         root.add(pipelinesNode)
 
