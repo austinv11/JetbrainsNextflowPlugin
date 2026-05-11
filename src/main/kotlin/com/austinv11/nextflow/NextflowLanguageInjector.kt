@@ -11,6 +11,7 @@ import com.intellij.psi.PsiWhiteSpace
 class NextflowLanguageInjector : MultiHostInjector {
     companion object {
         private val BLOCK_NAMES = setOf("script", "shell")
+        private val QUOTES = setOf("'''", "\"\"\"", "'", "\"")
     }
 
     override fun elementsToInjectIn(): List<Class<out PsiElement>> {
@@ -18,21 +19,43 @@ class NextflowLanguageInjector : MultiHostInjector {
     }
 
     override fun getLanguagesToInject(registrar: MultiHostRegistrar, context: PsiElement) {
-        // We only care about string literals
         val node = context.node ?: return
         val elementType = node.elementType.toString()
         if (!elementType.contains("string", ignoreCase = true) && !elementType.contains("literal", ignoreCase = true)) return
 
-        // Walk backwards to find the block identifier and colon
+        // 1. Walk backwards to find script/shell colon, and ensure this is the first CONTENT-BEARING string part.
         var current: PsiElement? = context.prevSibling
         var foundColon = false
         var blockName = ""
         var attempts = 0
+        var quoteType = ""
 
-        while (current != null && attempts < 20) {
+        // Try to guess the quote type from the context or its previous siblings.
+        if (QUOTES.any { context.text.startsWith(it) }) {
+            quoteType = QUOTES.first { context.text.startsWith(it) }
+        }
+
+        while (current != null && attempts < 50) {
             attempts++
-            val currentType = current.node?.elementType?.toString()
+            val currentType = current.node?.elementType?.toString() ?: ""
             val text = current.text
+
+            if (!foundColon && (currentType.contains("string", ignoreCase = true) || currentType.contains("literal", ignoreCase = true))) {
+                if (quoteType.isEmpty() && QUOTES.any { text.startsWith(it) }) {
+                    quoteType = QUOTES.first { text.startsWith(it) }
+                }
+
+                // If a previous string token is NOT just empty quotes, then IT is the first content-bearing token.
+                // We must return here so we don't start injection on the wrong token.
+                var contentStart = 0
+                if (QUOTES.any { text.startsWith(it) }) contentStart = QUOTES.first { text.startsWith(it) }.length
+                var contentEnd = text.length
+                if (contentEnd > contentStart && QUOTES.any { text.endsWith(it) }) contentEnd -= QUOTES.first { text.endsWith(it) }.length
+
+                if (contentEnd > contentStart) {
+                    return // Found a previous token with actual content
+                }
+            }
 
             if (current is PsiWhiteSpace || text.isBlank() || currentType == "new line") {
                 current = current.prevSibling
@@ -57,61 +80,112 @@ class NextflowLanguageInjector : MultiHostInjector {
         if (blockName in BLOCK_NAMES) {
             val bashLanguage = Language.findLanguageByID("Shell Script") ?: return
 
-            // Handle quotes properly to only inject into the content
-            val text = context.text
-            val prefixLength = when {
-                text.startsWith("'''") || text.startsWith("\"\"\"") -> 3
-                text.startsWith("'") || text.startsWith("\"") -> 1
-                else -> 0
+            // If we couldn't determine quote type, abort
+            if (quoteType.isEmpty() && QUOTES.any { context.text.startsWith(it) }) {
+                quoteType = QUOTES.first { context.text.startsWith(it) }
             }
-            val suffixLength = when {
-                text.length >= 3 && (text.endsWith("'''") || text.endsWith("\"\"\"")) -> 3
-                text.length >= 1 && text.substring(prefixLength).let { it.endsWith("'") || it.endsWith("\"") } -> 1
-                else -> 0
-            }
+            if (quoteType.isEmpty()) return
 
-            val contentStartIndex = prefixLength
-            val contentEndIndex = text.length - suffixLength
+            // Check if context actually has content. If it doesn't (it's just ending quotes), abort.
+            var ctxStart = 0
+            if (context.text.startsWith(quoteType)) ctxStart = quoteType.length
+            var ctxEnd = context.text.length
+            if (context.text.endsWith(quoteType) && context.text.length >= ctxStart + quoteType.length) ctxEnd -= quoteType.length
+            if (ctxEnd <= ctxStart) return
 
-            if (contentEndIndex > contentStartIndex) {
-                registrar.startInjecting(bashLanguage)
+            registrar.startInjecting(bashLanguage)
 
-                var currentOffset = contentStartIndex
+            var forwardNode: PsiElement? = context
+            var addedAtLeastOnePlace = false
 
-                // Look for ${...} and !{...}
-                var searchIndex = currentOffset
-                while (searchIndex < contentEndIndex) {
-                    val char = text[searchIndex]
-                    if ((char == '$' || char == '!') && searchIndex + 1 < contentEndIndex && text[searchIndex + 1] == '{') {
-                        // Found start of variable
-                        val varStartIndex = searchIndex
-                        var varEndIndex = -1
-                        // Simple brace matching - this won't handle nested braces inside the Nextflow variable perfectly,
-                        // but is generally sufficient for standard variables.
-                        for (i in varStartIndex + 2 until contentEndIndex) {
-                            if (text[i] == '}') {
-                                varEndIndex = i + 1
-                                break
-                            }
-                        }
+            while (forwardNode != null) {
+                val forwardType = forwardNode.node?.elementType?.toString() ?: ""
 
-                        if (varEndIndex != -1) {
-                            if (varStartIndex > currentOffset) {
-                                registrar.addPlace(null, null, context as PsiLanguageInjectionHost, TextRange(currentOffset, varStartIndex))
-                            }
-                            currentOffset = varEndIndex
-                            searchIndex = varEndIndex - 1 // Will be incremented at the end of loop
-                        }
+                if (forwardType.contains("string", ignoreCase = true) || forwardType.contains("literal", ignoreCase = true)) {
+                    val fText = forwardNode.text
+                    var startOffset = 0
+                    var endOffset = fText.length
+
+                    if (fText.startsWith(quoteType)) {
+                        startOffset = quoteType.length
                     }
-                    searchIndex++
+
+                    if (fText.endsWith(quoteType) && fText.length >= startOffset + quoteType.length) {
+                        endOffset -= quoteType.length
+                    }
+
+                    if (endOffset > startOffset && forwardNode is PsiLanguageInjectionHost) {
+                        injectIntoText(registrar, forwardNode, fText, startOffset, endOffset)
+                        addedAtLeastOnePlace = true
+                    }
+
+                    if (fText.endsWith(quoteType) && fText.length >= startOffset + quoteType.length) {
+                        break
+                    }
                 }
 
-                if (currentOffset < contentEndIndex) {
-                    registrar.addPlace(null, null, context as PsiLanguageInjectionHost, TextRange(currentOffset, contentEndIndex))
-                }
+                forwardNode = forwardNode.nextSibling
+            }
 
+            if (addedAtLeastOnePlace) {
                 registrar.doneInjecting()
             }
+        }
+    }
+
+    private fun injectIntoText(
+        registrar: MultiHostRegistrar,
+        host: PsiLanguageInjectionHost,
+        text: String,
+        startOffset: Int,
+        endOffset: Int
+    ) {
+        var currentOffset = startOffset
+        var searchIndex = startOffset
+
+        while (searchIndex < endOffset) {
+            val char = text[searchIndex]
+
+            if (searchIndex > startOffset && text[searchIndex - 1] == '\\') {
+                searchIndex++
+                continue
+            }
+
+            if (char == '$' || char == '!') {
+                val varStartIndex = searchIndex
+                var varEndIndex = -1
+
+                if (searchIndex + 1 < endOffset && text[searchIndex + 1] == '{') {
+                    for (i in varStartIndex + 2 until endOffset) {
+                        if (text[i] == '}') {
+                            varEndIndex = i + 1
+                            break
+                        }
+                    }
+                } else {
+                    var i = varStartIndex + 1
+                    if (i < endOffset && (text[i].isLetter() || text[i] == '_')) {
+                        i++
+                        while (i < endOffset && (text[i].isLetterOrDigit() || text[i] == '_')) {
+                            i++
+                        }
+                        varEndIndex = i
+                    }
+                }
+
+                if (varEndIndex != -1) {
+                    if (varStartIndex > currentOffset) {
+                        registrar.addPlace(null, null, host, TextRange(currentOffset, varStartIndex))
+                    }
+                    currentOffset = varEndIndex
+                    searchIndex = varEndIndex - 1
+                }
+            }
+            searchIndex++
+        }
+
+        if (currentOffset < endOffset) {
+            registrar.addPlace(null, null, host, TextRange(currentOffset, endOffset))
         }
     }
 }
