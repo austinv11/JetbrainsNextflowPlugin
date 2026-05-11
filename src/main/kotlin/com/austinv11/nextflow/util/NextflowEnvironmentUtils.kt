@@ -54,4 +54,19 @@ object NextflowEnvironmentUtils {
         // To be safe we just replace all backslashes with forward slashes since WSL only uses forward slashes
         return result.replace('\\', '/')
     }
+
+    /**
+     * Converts a WSL path back to a Windows path if running on Windows.
+     * e.g., /mnt/c/path/to/file -> C:\path\to\file
+     */
+    fun convertFromWslPathIfNeeded(path: String): String {
+        if (!SystemInfo.isWindows) return path
+
+        val regex = Regex("""^/mnt/([a-zA-Z])/(.*)$""")
+        val match = regex.find(path) ?: return path
+
+        val drive = match.groupValues[1].uppercase()
+        val rest = match.groupValues[2]
+        return "$drive:\\${rest.replace('/', '\\')}"
+    }
 }

@@ -8,6 +8,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.ui.ColoredTreeCellRenderer
 import com.intellij.ui.SimpleTextAttributes
 import com.intellij.icons.AllIcons
+import com.intellij.ui.AnimatedIcon
 import javax.swing.JTree
 import com.intellij.ui.JBSplitter
 import com.intellij.ui.components.JBScrollPane
@@ -71,11 +72,17 @@ class NextflowConsoleView(val project: Project, val rawConsole: ConsoleView) : C
                     val iconState = when (userObject.status) {
                         "COMPLETED" -> AllIcons.RunConfigurations.TestPassed
                         "FAILED" -> AllIcons.RunConfigurations.TestFailed
-                        "RUNNING" -> AllIcons.RunConfigurations.TestState.Run
+                        "RUNNING" -> AnimatedIcon.Default.INSTANCE
                         else -> AllIcons.RunConfigurations.TestIgnored
                     }
 
                     append(userObject.name, statusColor)
+                    var statusText = " [" + userObject.status
+                    if (userObject.status == "COMPLETED" && userObject.durationMs != null) {
+                        statusText += " in ${formatDuration(userObject.durationMs)}"
+                    }
+                    statusText += "]"
+                    append(statusText, SimpleTextAttributes.GRAYED_ATTRIBUTES)
                     append(" [" + userObject.status + "]", SimpleTextAttributes.GRAYED_ATTRIBUTES)
                     icon = iconState
                 }
@@ -108,13 +115,30 @@ class NextflowConsoleView(val project: Project, val rawConsole: ConsoleView) : C
         }
     }
 
+    private fun formatDuration(durationMs: Long): String {
+        val seconds = durationMs / 1000
+        val minutes = seconds / 60
+        val hours = minutes / 60
+
+        val s = seconds % 60
+        val m = minutes % 60
+
+        return buildString {
+            if (hours > 0) append("${hours}h ")
+            if (m > 0 || hours > 0) append("${m}m ")
+            if (s > 0 || (hours == 0L && m == 0L)) append("${s}s")
+            if (isEmpty()) append("< 1s")
+        }.trim()
+    }
+
     private fun loadTaskLogs(taskData: NextflowTaskData) {
         val workdir = taskData.workdir
-        if (workdir != null && workdir.startsWith("/")) {
+        val convertedWorkdir = com.austinv11.nextflow.util.NextflowEnvironmentUtils.convertFromWslPathIfNeeded(workdir ?: "")
+        if (convertedWorkdir.isNotEmpty()) {
             // Local file execution
-            val out = File(workdir, ".command.out")
-            val err = File(workdir, ".command.err")
-            val log = File(workdir, ".command.log")
+            val out = File(convertedWorkdir, ".command.out")
+            val err = File(convertedWorkdir, ".command.err")
+            val log = File(convertedWorkdir, ".command.log")
 
             val sb = StringBuilder()
             if (out.exists()) {
@@ -127,12 +151,12 @@ class NextflowConsoleView(val project: Project, val rawConsole: ConsoleView) : C
                 sb.append("--- .command.log ---\n").append(log.readText()).append("\n\n")
             }
             if (!out.exists() && !err.exists() && !log.exists()) {
-                sb.append("No local logs found in ").append(workdir)
+                sb.append("No local logs found in ").append(convertedWorkdir)
             }
             logTextArea.text = sb.toString()
             logTextArea.caretPosition = 0
         } else {
-            logTextArea.text = "Remote execution or invalid workdir:\n" + (workdir ?: "Unknown") + "\nPlease check cloud storage or Nextflow standard console for logs."
+            logTextArea.text = "Remote execution or invalid workdir:\n" + (convertedWorkdir.takeIf { it.isNotEmpty() } ?: "Unknown") + "\nPlease check cloud storage or Nextflow standard console for logs."
         }
     }
 
@@ -147,6 +171,7 @@ class NextflowConsoleView(val project: Project, val rawConsole: ConsoleView) : C
                     val taskName = trace.get("name")?.asText() ?: return@invokeLater
                     val workdir = trace.get("workdir")?.asText()
                     val status = trace.get("status")?.asText() ?: "UNKNOWN"
+                    val duration = trace.get("realtime")?.asLong() ?: trace.get("duration")?.asLong()
 
                     val processNode = processNodes.getOrPut(processName) {
                         val node = DefaultMutableTreeNode(processName)
@@ -155,7 +180,7 @@ class NextflowConsoleView(val project: Project, val rawConsole: ConsoleView) : C
                     }
 
                     val taskId = trace.get("task_id")?.asText() ?: taskName
-                    val taskData = NextflowTaskData(taskName, taskId, workdir, status)
+                    val taskData = NextflowTaskData(taskName, taskId, workdir, status, duration)
 
                     var taskNode = taskNodes[taskId]
                     if (taskNode == null) {
@@ -238,7 +263,8 @@ data class NextflowTaskData(
     val name: String,
     val taskId: String,
     val workdir: String?,
-    val status: String
+    val status: String,
+    val durationMs: Long? = null
 ) {
     override fun toString(): String {
         return "[$status] $name"

@@ -19,6 +19,8 @@ import com.intellij.execution.runners.ExecutionEnvironment
 import com.intellij.openapi.util.SystemInfo
 import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.util.Key
+import java.io.File
+import java.nio.file.Files
 
 val NEXTFLOW_DEBUG_PORT_KEY = Key.create<Int>("NEXTFLOW_DEBUG_PORT")
 
@@ -29,6 +31,7 @@ class NextflowRunProfileState(
 
 
     private val weblogServer = NextflowWeblogServer()
+    private var weblogConfigFile: File? = null
 
     override fun execute(executor: Executor, runner: ProgramRunner<*>): ExecutionResult {
         weblogServer.start()
@@ -39,6 +42,7 @@ class NextflowRunProfileState(
             override fun startNotified(event: ProcessEvent) {}
             override fun processTerminated(event: ProcessEvent) {
                 weblogServer.stop()
+                weblogConfigFile?.delete()
             }
             override fun onTextAvailable(event: ProcessEvent, outputType: Key<*>) {}
         })
@@ -87,10 +91,25 @@ class NextflowRunProfileState(
             }
         }
 
+
+        // Generate a temporary weblog configuration file
+        val tempConfig = Files.createTempFile("nextflow-weblog-", ".config").toFile()
+        tempConfig.deleteOnExit()
+        tempConfig.writeText("""
+            weblog {
+                enabled = true
+                url = 'http://127.0.0.1:${weblogServer.port}'
+            }
+        """.trimIndent())
+        weblogConfigFile = tempConfig
+        val tempConfigWslPath = NextflowEnvironmentUtils.convertToWslPathIfNeeded(tempConfig.absolutePath)
+        commandLine.addParameter("-c")
+        commandLine.addParameter(tempConfigWslPath)
+
         commandLine.addParameter("run")
 
-        commandLine.addParameter("-with-weblog")
-        commandLine.addParameter("http://127.0.0.1:${weblogServer.port}")
+        // commandLine.addParameter("-with-weblog")
+        // commandLine.addParameter("http://127.0.0.1:${weblogServer.port}")
 
         val scriptPath = configuration.scriptPath
         if (scriptPath.isNullOrBlank()) {
