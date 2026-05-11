@@ -84,8 +84,9 @@ intellijPlatform {
         token.set(System.getenv("PUBLISH_TOKEN"))
     }
     signing {
-        val signingKey: String? by project
-        val signingPassword: String? by project
+        certificateChain.set(System.getenv("CERTIFICATE_CHAIN"))
+        privateKey.set(System.getenv("PRIVATE_KEY"))
+        password.set(System.getenv("PRIVATE_KEY_PASSWORD"))
     }
 }
 
