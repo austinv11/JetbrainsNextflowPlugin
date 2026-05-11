@@ -17,6 +17,7 @@ This plugin provides enhanced support for Nextflow within JetBrains environments
 * **File Templates**: Quickly bootstrap your projects with built-in templates for `.nf`, `.nf.test`, and `nextflow.config` files.
 * **Interactive Nextflow Console**: Launch an interactive REPL console to test Nextflow logic directly within the IDE.
 * **Dedicated Tool Windows**: Specialized project and resource panels to better manage and interact with your Nextflow environment.
+* **nf-core Support**: Integrated support for managing nf-core-based pipelines, with a dedicated tool window (requires [nf-core/tools](https://github.com/nf-core/tools)).
 
 ## Development
 

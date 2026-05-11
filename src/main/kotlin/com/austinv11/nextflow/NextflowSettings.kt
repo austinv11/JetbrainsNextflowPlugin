@@ -31,6 +31,9 @@ class NextflowSettings : PersistentStateComponent<NextflowSettings.State> {
         // Execution
         var nextflowBinaryPath: String = "",
 
+        // nf-core
+        var nfCoreBinaryPath: String = "",
+
         // Java Runtime
         var javaHome: String = "",
 
@@ -152,6 +155,59 @@ class NextflowSettings : PersistentStateComponent<NextflowSettings.State> {
         }
 
         logger.warn("detectInstalledVersion: Failed to detect Nextflow version after trying all methods")
+        return null
+    }
+
+    fun detectInstalledNfCoreVersion(binaryPath: String? = null): String? {
+        val bin = binaryPath?.takeIf { it.isNotBlank() }
+            ?: myState.nfCoreBinaryPath.takeIf { it.isNotBlank() }
+            ?: "nf-core"
+
+        logger.info("detectInstalledNfCoreVersion: Starting detection with binary: '$bin'")
+
+        val commandsToTry = if (SystemInfo.isWindows) {
+            listOf(
+                listOf(bin, "--version"),
+                listOf("wsl", bin, "--version")
+            )
+        } else {
+            listOf(listOf(bin, "--version"))
+        }
+
+        for (command in commandsToTry) {
+            val commandStr = command.joinToString(" ")
+            val result = runCatching {
+                val process = ProcessBuilder(command)
+                    .redirectErrorStream(true)
+                    .start()
+
+                val outputBuffer = StringBuilder()
+                val readerThread = Thread {
+                    try {
+                        process.inputStream.bufferedReader().forEachLine { outputBuffer.appendLine(it) }
+                    } catch (_: Exception) {}
+                }.also { it.isDaemon = true; it.start() }
+
+                val timeoutSeconds = if (command[0] == "wsl") 30L else 5L
+
+                if (!process.waitFor(timeoutSeconds, java.util.concurrent.TimeUnit.SECONDS)) {
+                    process.destroyForcibly()
+                    return@runCatching null
+                }
+
+                readerThread.join(2_000)
+
+                val output = outputBuffer.toString().trim()
+                if (output.isBlank()) return@runCatching null
+
+                // nf-core, version 2.14.1
+                val matcher = Regex("version\\\\s+([\\\\d.]+)").find(output)
+                matcher?.let { it.groupValues[1] }
+            }.getOrNull()
+
+            if (result != null) return result
+        }
+
         return null
     }
 }

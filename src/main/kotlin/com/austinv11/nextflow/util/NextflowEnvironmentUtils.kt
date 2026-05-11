@@ -21,6 +21,22 @@ object NextflowEnvironmentUtils {
         return if (SystemInfo.isWindows) "wsl $bin" else bin
     }
 
+
+    /**
+     * Retrieves the raw nf-core binary path from settings, falling back to "nf-core" if empty.
+     */
+    fun getNfCoreBinary(project: Project): String {
+        return NextflowSettings.getInstance(project).state.nfCoreBinaryPath.takeIf { it.isNotBlank() } ?: "nf-core"
+    }
+
+    /**
+     * Retrieves the executable command string for nf-core, prepending "wsl " on Windows.
+     */
+    fun getExecutableNfCoreCommand(project: Project): String {
+        val bin = getNfCoreBinary(project)
+        return if (SystemInfo.isWindows) "wsl $bin" else bin
+    }
+
     /**
      * Retrieves the Java executable path from settings, falling back to the system's java.home.
      */

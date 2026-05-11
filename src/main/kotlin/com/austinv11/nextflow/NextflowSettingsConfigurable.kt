@@ -45,6 +45,46 @@ class NextflowSettingsConfigurable(private val project: Project) : BoundConfigur
                 }
             }
 
+
+            group("nf-core") {
+                var nfCoreExecFieldText = ""
+                row("nf-core executable:") {
+                    val nfCoreExecField = textFieldWithBrowseButton(
+                        FileChooserDescriptorFactory.createSingleFileNoJarsDescriptor().withTitle("Select nf-core Executable"),
+                        project
+                    ).bindText(
+                        getter = { state.nfCoreBinaryPath },
+                        setter = { state.nfCoreBinaryPath = it }
+                    ).comment("Path to the nf-core binary. Leave empty to auto-detect from PATH.")
+
+                    nfCoreExecField.component.textField.document.addDocumentListener(object : javax.swing.event.DocumentListener {
+                        override fun insertUpdate(e: javax.swing.event.DocumentEvent?) { nfCoreExecFieldText = nfCoreExecField.component.text }
+                        override fun removeUpdate(e: javax.swing.event.DocumentEvent?) { nfCoreExecFieldText = nfCoreExecField.component.text }
+                        override fun changedUpdate(e: javax.swing.event.DocumentEvent?) { nfCoreExecFieldText = nfCoreExecField.component.text }
+                    })
+                    nfCoreExecFieldText = state.nfCoreBinaryPath
+                }
+
+                row("nf-core Version:") {
+                    val versionField = textField()
+                        .enabled(false)
+                    button("Detect") {
+                        ProgressManager.getInstance().run(object : Task.Backgroundable(project, "Detecting nf-core version", false) {
+                            override fun run(indicator: ProgressIndicator) {
+                                val version = settings.detectInstalledNfCoreVersion(nfCoreExecFieldText)
+                                ApplicationManager.getApplication().invokeLater {
+                                    if (version != null) {
+                                        versionField.component.text = version
+                                    } else {
+                                        Messages.showErrorDialog(project, "Could not detect nf-core version. Please check the executable path.", "nf-core Detection Failed")
+                                    }
+                                }
+                            }
+                        })
+                    }
+                }
+            }
+
             group("LSP Server") {
                 row("Java Home:") {
                     textFieldWithBrowseButton(
@@ -77,8 +117,8 @@ class NextflowSettingsConfigurable(private val project: Project) : BoundConfigur
                         )
                 }.rowComment(
                     "<b>off</b> – disabled · <b>errors</b> – errors only · " +
-                    "<b>warnings</b> – errors and warnings (default) · " +
-                    "<b>paranoid</b> – all hints and best-practice checks"
+                            "<b>warnings</b> – errors and warnings (default) · " +
+                            "<b>paranoid</b> – all hints and best-practice checks"
                 )
             }
 

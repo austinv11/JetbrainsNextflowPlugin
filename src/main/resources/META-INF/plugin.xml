@@ -47,6 +47,11 @@
                     icon="com.austinv11.nextflow.NextflowIcons.FILE"
                     factoryClass="com.austinv11.nextflow.toolwindow.NextflowToolWindowFactory"
                     doNotActivateOnStart="true"/>
+        <toolWindow id="nf-core"
+                    anchor="right"
+                    icon="com.austinv11.nextflow.NextflowIcons.NF_CORE"
+                    factoryClass="com.austinv11.nextflow.nfcore.NfCoreToolWindowFactory"
+                    doNotActivateOnStart="true"/>
         <notificationGroup id="Nextflow Missing" displayType="STICKY_BALLOON"/>
         <internalFileTemplate name="Nextflow Script"/>
         <internalFileTemplate name="Nextflow Process"/>
