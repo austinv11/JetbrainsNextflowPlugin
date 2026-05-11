@@ -14,7 +14,7 @@ plugins {
 group = "com.austinv11.nextflow"
 version = System.getenv("GITHUB_REF")?.let { ref ->
     if (ref.startsWith("refs/tags/")) {
-        ref.substringAfter("refs/tags/")
+        ref.substringAfter("refs/tags/").removePrefix("v")
     } else null
 } ?: run {
     try {
