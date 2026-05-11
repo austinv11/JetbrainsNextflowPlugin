@@ -19,6 +19,16 @@ This plugin provides enhanced support for Nextflow within JetBrains environments
 * **Dedicated Tool Windows**: Specialized project and resource panels to better manage and interact with your Nextflow environment.
 * **nf-core Support**: Integrated support for managing nf-core-based pipelines, with a dedicated tool window (requires [nf-core/tools](https://github.com/nf-core/tools)).
 
+## Screenshots
+![Editor](screenshots/Editor.png)
+![PreviewDag](screenshots/PreviewDag.png)
+![RunConfigurations](screenshots/RunConfigurations.png)
+![PopupDocumentation](screenshots/PopupDocumentation.png)
+![NfCoreCommands](screenshots/NfCoreCommands.png)
+![NfCoreBrowser](screenshots/NfCoreBrowser.png)
+![NewNextflowFile](screenshots/NewNextflowFile.png)
+![SettingsMenu](screenshots/SettingsMenu.png)
+
 ## Development
 
 The project is built using Gradle. Here are the common commands used for development:
