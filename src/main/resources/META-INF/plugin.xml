@@ -64,6 +64,7 @@
         <runConfigurationProducer implementation="com.austinv11.nextflow.execution.NextflowRunConfigurationProducer" />
         <codeInsight.lineMarkerProvider language="Nextflow" implementationClass="com.austinv11.nextflow.execution.NextflowRunLineMarkerContributor" />
         <programRunner implementation="com.austinv11.nextflow.execution.NextflowDebugRunner" />
+        <newProjectWizard.language implementation="com.austinv11.nextflow.project.NextflowProjectWizard"/>
     </extensions>
 
     <actions>
