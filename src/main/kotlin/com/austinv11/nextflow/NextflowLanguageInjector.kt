@@ -55,7 +55,7 @@ class NextflowLanguageInjector : MultiHostInjector {
         }
 
         if (blockName in BLOCK_NAMES) {
-            val bashLanguage = Language.findLanguageByID("Bash") ?: Language.findLanguageByID("sh") ?: return
+            val bashLanguage = Language.findLanguageByID("Shell Script") ?: return
 
             // Handle quotes properly to only inject into the content
             val text = context.text

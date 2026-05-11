@@ -24,7 +24,11 @@ class NextflowFileReferenceContributor : PsiReferenceContributor() {
                         node.elementType != NEXTFLOW_STRING) return PsiReference.EMPTY_ARRAY
 
                     // Walk backwards to verify pattern: "file" or "path" -> (optional parenthesis) -> string
-                    var current: PsiElement? = element.prevSibling
+                    var current: PsiElement? = if (element.parent is NextflowStringLiteral) {
+                        element.parent.prevSibling
+                    } else {
+                        element.prevSibling
+                    }
                     var foundParen = false
                     var functionName = ""
 
