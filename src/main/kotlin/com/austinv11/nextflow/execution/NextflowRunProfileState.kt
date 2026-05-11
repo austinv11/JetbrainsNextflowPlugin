@@ -2,6 +2,14 @@ package com.austinv11.nextflow.execution
 
 import com.austinv11.nextflow.NextflowSettings
 import com.austinv11.nextflow.util.NextflowEnvironmentUtils
+import com.austinv11.nextflow.execution.console.NextflowWeblogServer
+import com.austinv11.nextflow.execution.console.NextflowConsoleView
+import com.intellij.execution.ExecutionResult
+import com.intellij.execution.DefaultExecutionResult
+import com.intellij.execution.Executor
+import com.intellij.execution.process.ProcessListener
+import com.intellij.execution.process.ProcessEvent
+import com.intellij.execution.runners.ProgramRunner
 import com.intellij.execution.ExecutionException
 import com.intellij.execution.configurations.CommandLineState
 import com.intellij.execution.configurations.GeneralCommandLine
@@ -18,6 +26,34 @@ class NextflowRunProfileState(
     environment: ExecutionEnvironment,
     private val configuration: NextflowRunConfiguration
 ) : CommandLineState(environment) {
+
+
+    private val weblogServer = NextflowWeblogServer()
+
+    override fun execute(executor: Executor, runner: ProgramRunner<*>): ExecutionResult {
+        weblogServer.start()
+
+        val processHandler = startProcess()
+
+        processHandler.addProcessListener(object : ProcessListener {
+            override fun startNotified(event: ProcessEvent) {}
+            override fun processTerminated(event: ProcessEvent) {
+                weblogServer.stop()
+            }
+            override fun onTextAvailable(event: ProcessEvent, outputType: Key<*>) {}
+        })
+
+        val console = createConsole(executor)
+        val customConsole = NextflowConsoleView(environment.project, console!!)
+        customConsole.attachToProcess(processHandler)
+
+        // Pass events from server to custom console
+        weblogServer.onEventReceived = { event ->
+            customConsole.handleWeblogEvent(event)
+        }
+
+        return DefaultExecutionResult(customConsole, processHandler, *createActions(customConsole, processHandler, executor))
+    }
 
     override fun startProcess(): ProcessHandler {
         return startLocalProcess()
@@ -52,6 +88,9 @@ class NextflowRunProfileState(
         }
 
         commandLine.addParameter("run")
+
+        commandLine.addParameter("-with-weblog")
+        commandLine.addParameter("http://127.0.0.1:${weblogServer.port}")
 
         val scriptPath = configuration.scriptPath
         if (scriptPath.isNullOrBlank()) {

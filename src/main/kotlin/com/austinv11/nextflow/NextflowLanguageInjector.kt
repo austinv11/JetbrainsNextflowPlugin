@@ -10,7 +10,7 @@ import com.intellij.psi.PsiWhiteSpace
 
 class NextflowLanguageInjector : MultiHostInjector {
     companion object {
-        private val BLOCK_NAMES = setOf("script", "shell", "exec")
+        private val BLOCK_NAMES = setOf("script", "shell")
     }
 
     override fun elementsToInjectIn(): List<Class<out PsiElement>> {
@@ -27,23 +27,23 @@ class NextflowLanguageInjector : MultiHostInjector {
         var current: PsiElement? = context.prevSibling
         var foundColon = false
         var blockName = ""
+        var attempts = 0
 
-        while (current != null) {
+        while (current != null && attempts < 20) {
+            attempts++
             val currentType = current.node?.elementType?.toString()
-            if (current is PsiWhiteSpace || (currentType != null && (current.text.isBlank() || currentType == "new line"))) {
+            val text = current.text
+
+            if (current is PsiWhiteSpace || text.isBlank() || currentType == "new line") {
                 current = current.prevSibling
                 continue
             }
 
             if (!foundColon) {
-                if (current.text == ":") {
+                if (text == ":") {
                     foundColon = true
-                    current = current.prevSibling
-                    continue
-                } else {
-                    // Stop searching if we hit something else before the colon
-                    return
                 }
+                current = current.prevSibling
             } else {
                 if (currentType == "identifier") {
                     blockName = current.text
@@ -70,11 +70,46 @@ class NextflowLanguageInjector : MultiHostInjector {
                 else -> 0
             }
 
-            // Only inject if there's actual content inside the string, ensuring no TextRange errors
-            // and avoiding open registrars
-            if (text.length >= prefixLength + suffixLength && text.length - suffixLength > prefixLength) {
+            val contentStartIndex = prefixLength
+            val contentEndIndex = text.length - suffixLength
+
+            if (contentEndIndex > contentStartIndex) {
                 registrar.startInjecting(bashLanguage)
-                registrar.addPlace(null, null, context as PsiLanguageInjectionHost, TextRange(prefixLength, text.length - suffixLength))
+
+                var currentOffset = contentStartIndex
+
+                // Look for ${...} and !{...}
+                var searchIndex = currentOffset
+                while (searchIndex < contentEndIndex) {
+                    val char = text[searchIndex]
+                    if ((char == '$' || char == '!') && searchIndex + 1 < contentEndIndex && text[searchIndex + 1] == '{') {
+                        // Found start of variable
+                        val varStartIndex = searchIndex
+                        var varEndIndex = -1
+                        // Simple brace matching - this won't handle nested braces inside the Nextflow variable perfectly,
+                        // but is generally sufficient for standard variables.
+                        for (i in varStartIndex + 2 until contentEndIndex) {
+                            if (text[i] == '}') {
+                                varEndIndex = i + 1
+                                break
+                            }
+                        }
+
+                        if (varEndIndex != -1) {
+                            if (varStartIndex > currentOffset) {
+                                registrar.addPlace(null, null, context as PsiLanguageInjectionHost, TextRange(currentOffset, varStartIndex))
+                            }
+                            currentOffset = varEndIndex
+                            searchIndex = varEndIndex - 1 // Will be incremented at the end of loop
+                        }
+                    }
+                    searchIndex++
+                }
+
+                if (currentOffset < contentEndIndex) {
+                    registrar.addPlace(null, null, context as PsiLanguageInjectionHost, TextRange(currentOffset, contentEndIndex))
+                }
+
                 registrar.doneInjecting()
             }
         }

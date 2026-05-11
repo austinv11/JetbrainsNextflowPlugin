@@ -19,7 +19,9 @@ class NextflowFileReferenceContributor : PsiReferenceContributor() {
                     val node = element.node ?: return PsiReference.EMPTY_ARRAY
                     val elementType = node.elementType.toString()
 
-                    if (!elementType.contains("string", ignoreCase = true)) return PsiReference.EMPTY_ARRAY
+                    // Accept string literal leaves and our custom NextflowStringLiteral wrapper
+                    if (!elementType.contains("string", ignoreCase = true) &&
+                        node.elementType != NEXTFLOW_STRING) return PsiReference.EMPTY_ARRAY
 
                     // Walk backwards to verify pattern: "file" or "path" -> (optional parenthesis) -> string
                     var current: PsiElement? = element.prevSibling

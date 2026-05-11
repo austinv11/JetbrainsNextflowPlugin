@@ -38,6 +38,7 @@ dependencies {
         bundledPlugin("org.jetbrains.plugins.textmate")
         bundledPlugin("org.jetbrains.plugins.terminal")
         bundledPlugin("org.intellij.groovy")
+        bundledPlugin("com.jetbrains.sh")
         testFramework(org.jetbrains.intellij.platform.gradle.TestFrameworkType.Platform)
     }
 

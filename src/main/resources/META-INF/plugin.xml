@@ -17,6 +17,7 @@
         <plugin id="org.intellij.groovy"/>
         <plugin id="org.jetbrains.plugins.textmate"/>
         <plugin id="org.jetbrains.plugins.terminal"/>
+        <plugin id="com.jetbrains.sh"/>
         <!-- intellij.textmate must be listed explicitly so its module classloader
              is accessible — required for TextMateBundleProvider to resolve. -->
         <module name="intellij.textmate"/>
