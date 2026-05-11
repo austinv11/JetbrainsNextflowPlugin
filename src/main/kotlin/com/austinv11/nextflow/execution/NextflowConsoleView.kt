@@ -22,13 +22,23 @@ import javax.swing.tree.DefaultMutableTreeNode
 import javax.swing.tree.DefaultTreeModel
 import java.awt.BorderLayout
 import java.io.File
+import java.awt.event.MouseAdapter
+import java.awt.event.MouseEvent
+import com.intellij.openapi.actionSystem.ActionManager
+import com.intellij.openapi.actionSystem.DefaultActionGroup
+import com.intellij.openapi.actionSystem.AnActionEvent
+import com.intellij.ide.actions.RevealFileAction
+import com.intellij.openapi.fileEditor.FileEditorManager
+import com.intellij.openapi.vfs.LocalFileSystem
+import com.intellij.openapi.ide.CopyPasteManager
+import java.awt.datatransfer.StringSelection
 
 class NextflowConsoleView(val project: Project, val rawConsole: ConsoleView) : ConsoleView {
 
     private val mainPanel = JPanel(BorderLayout())
     private val tabbedPane = JBTabbedPane()
 
-    // Weblog Tree View UI
+    // Process Tree View UI
     private val treeRoot = DefaultMutableTreeNode("Nextflow Run")
     private val treeModel = DefaultTreeModel(treeRoot)
     private val tree = Tree(treeModel)
@@ -96,7 +106,7 @@ class NextflowConsoleView(val project: Project, val rawConsole: ConsoleView) : C
         val weblogPanel = JPanel(BorderLayout())
         weblogPanel.add(splitter, BorderLayout.CENTER)
 
-        tabbedPane.addTab("Weblog Tree", weblogPanel)
+        tabbedPane.addTab("Process Tree", weblogPanel)
         tabbedPane.addTab("Raw Console", rawConsole.component)
 
         mainPanel.add(tabbedPane, BorderLayout.CENTER)
@@ -108,11 +118,70 @@ class NextflowConsoleView(val project: Project, val rawConsole: ConsoleView) : C
                 val nodeData = node.userObject
                 if (nodeData is NextflowTaskData) {
                     loadTaskLogs(nodeData)
+                } else if (nodeData is String && nodeData != "Nextflow Run") {
+                    loadProcessLogs(node)
                 } else {
                     logTextArea.text = ""
                 }
             }
         }
+
+        // Mouse Listener for Context Menu
+        tree.addMouseListener(object : MouseAdapter() {
+            override fun mouseReleased(e: MouseEvent) {
+                if (e.isPopupTrigger) {
+                    handlePopup(e)
+                }
+            }
+            override fun mousePressed(e: MouseEvent) {
+                if (e.isPopupTrigger) {
+                    handlePopup(e)
+                }
+            }
+
+            private fun handlePopup(e: MouseEvent) {
+                val path = tree.getPathForLocation(e.x, e.y) ?: return
+                tree.selectionPath = path
+                val node = path.lastPathComponent as? DefaultMutableTreeNode ?: return
+                val nodeData = node.userObject as? NextflowTaskData ?: return
+
+                val workdir = nodeData.workdir
+                val convertedWorkdir = com.austinv11.nextflow.util.NextflowEnvironmentUtils.convertFromWslPathIfNeeded(workdir ?: "")
+                if (convertedWorkdir.isEmpty()) return
+
+                val actionGroup = DefaultActionGroup()
+
+                actionGroup.add(object : AnAction("Open Work Directory", "Open the task work directory in file explorer", AllIcons.Nodes.Folder) {
+                    override fun actionPerformed(event: AnActionEvent) {
+                        val file = File(convertedWorkdir)
+                        if (file.exists()) {
+                            RevealFileAction.openDirectory(file)
+                        }
+                    }
+                })
+
+                actionGroup.add(object : AnAction("Copy Work Directory Path", "Copy the path to the clipboard", AllIcons.Actions.Copy) {
+                    override fun actionPerformed(event: AnActionEvent) {
+                        CopyPasteManager.getInstance().setContents(StringSelection(convertedWorkdir))
+                    }
+                })
+
+                actionGroup.add(object : AnAction("Open .command.sh", "Open the task execution script in the editor", AllIcons.FileTypes.Text) {
+                    override fun actionPerformed(event: AnActionEvent) {
+                        val scriptFile = File(convertedWorkdir, ".command.sh")
+                        if (scriptFile.exists()) {
+                            val vFile = LocalFileSystem.getInstance().refreshAndFindFileByIoFile(scriptFile)
+                            if (vFile != null) {
+                                FileEditorManager.getInstance(project).openFile(vFile, true)
+                            }
+                        }
+                    }
+                })
+
+                val popupMenu = ActionManager.getInstance().createActionPopupMenu("ProcessTreePopup", actionGroup)
+                popupMenu.component.show(tree, e.x, e.y)
+            }
+        })
     }
 
     private fun formatDuration(durationMs: Long): String {
@@ -135,29 +204,40 @@ class NextflowConsoleView(val project: Project, val rawConsole: ConsoleView) : C
         val workdir = taskData.workdir
         val convertedWorkdir = com.austinv11.nextflow.util.NextflowEnvironmentUtils.convertFromWslPathIfNeeded(workdir ?: "")
         if (convertedWorkdir.isNotEmpty()) {
-            // Local file execution
-            val out = File(convertedWorkdir, ".command.out")
-            val err = File(convertedWorkdir, ".command.err")
-            val log = File(convertedWorkdir, ".command.log")
-
-            val sb = StringBuilder()
-            if (out.exists()) {
-                sb.append("--- .command.out ---\n").append(out.readText()).append("\n\n")
+            val logFile = File(convertedWorkdir, ".command.log")
+            if (logFile.exists()) {
+                logTextArea.text = logFile.readText()
+            } else {
+                logTextArea.text = "No log file found at ${logFile.absolutePath}"
             }
-            if (err.exists()) {
-                sb.append("--- .command.err ---\n").append(err.readText()).append("\n\n")
-            }
-            if (log.exists()) {
-                sb.append("--- .command.log ---\n").append(log.readText()).append("\n\n")
-            }
-            if (!out.exists() && !err.exists() && !log.exists()) {
-                sb.append("No local logs found in ").append(convertedWorkdir)
-            }
-            logTextArea.text = sb.toString()
             logTextArea.caretPosition = 0
         } else {
             logTextArea.text = "Remote execution or invalid workdir:\n" + (convertedWorkdir.takeIf { it.isNotEmpty() } ?: "Unknown") + "\nPlease check cloud storage or Nextflow standard console for logs."
         }
+    }
+
+    private fun loadProcessLogs(processNode: DefaultMutableTreeNode) {
+        val sb = java.lang.StringBuilder()
+        for (i in 0 until processNode.childCount) {
+            val childNode = processNode.getChildAt(i) as? DefaultMutableTreeNode ?: continue
+            val taskData = childNode.userObject as? NextflowTaskData ?: continue
+
+            sb.append("--- [${taskData.name}] ---\n")
+            val workdir = taskData.workdir
+            val convertedWorkdir = com.austinv11.nextflow.util.NextflowEnvironmentUtils.convertFromWslPathIfNeeded(workdir ?: "")
+            if (convertedWorkdir.isNotEmpty()) {
+                val logFile = File(convertedWorkdir, ".command.log")
+                if (logFile.exists()) {
+                    sb.append(logFile.readText()).append("\n\n")
+                } else {
+                    sb.append("No log file found at ${logFile.absolutePath}\n\n")
+                }
+            } else {
+                sb.append("Remote execution or invalid workdir\n\n")
+            }
+        }
+        logTextArea.text = sb.toString()
+        logTextArea.caretPosition = 0
     }
 
     fun handleWeblogEvent(event: JsonNode) {
