@@ -20,7 +20,6 @@ import com.intellij.psi.LiteralTextEscaper
 import com.intellij.psi.tree.IElementType
 import com.intellij.psi.tree.IFileElementType
 import com.intellij.psi.tree.TokenSet
-import org.jetbrains.plugins.groovy.lang.parser.GroovyParserDefinition
 
 private val FILE = IFileElementType(NextflowLanguage.INSTANCE)
 val NEXTFLOW_STRING = IElementType("NEXTFLOW_STRING", NextflowLanguage.INSTANCE)
@@ -33,7 +32,7 @@ class NextflowParserDefinition : ParserDefinition {
 
     private val groovyParser: ParserDefinition? by lazy {
         if (isGroovyAvailable) {
-            GroovyParserDefinition()
+            org.jetbrains.plugins.groovy.lang.parser.GroovyParserDefinition()
         } else null
     }
 
@@ -60,11 +59,11 @@ class NextflowParserDefinition : ParserDefinition {
 }
 
 private class NextflowFlatParser : PsiParser {
-    private val groovy = GroovyParserDefinition()
+    private val groovyParser by lazy { org.jetbrains.plugins.groovy.lang.parser.GroovyParserDefinition() }
 
     override fun parse(root: IElementType, builder: PsiBuilder): ASTNode {
         val marker = builder.mark()
-        val stringTokens = groovy.stringLiteralElements
+        val stringTokens = groovyParser.stringLiteralElements
 
         while (!builder.eof()) {
             val tokenType = builder.tokenType
