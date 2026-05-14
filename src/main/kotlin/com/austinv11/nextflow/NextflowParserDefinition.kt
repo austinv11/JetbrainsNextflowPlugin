@@ -1,5 +1,6 @@
 package com.austinv11.nextflow
 
+import com.austinv11.nextflow.util.NextflowEnvironmentUtils
 import com.intellij.ide.plugins.PluginManagerCore
 import com.intellij.openapi.extensions.PluginId
 import com.intellij.extapi.psi.PsiFileBase
@@ -26,30 +27,27 @@ val NEXTFLOW_STRING = IElementType("NEXTFLOW_STRING", NextflowLanguage.INSTANCE)
 val NEXTFLOW_TEXT = IElementType("NEXTFLOW_TEXT", NextflowLanguage.INSTANCE)
 
 class NextflowParserDefinition : ParserDefinition {
-    private val isGroovyAvailable by lazy {
-        PluginManagerCore.getPlugin(PluginId.getId("org.intellij.groovy"))?.isEnabled == true
-    }
 
     private val groovyParser: ParserDefinition? by lazy {
-        if (isGroovyAvailable) {
+        if (NextflowEnvironmentUtils.isGroovyAvailable) {
             org.jetbrains.plugins.groovy.lang.parser.GroovyParserDefinition()
         } else null
     }
 
     override fun createLexer(project: Project?): Lexer =
-        if (isGroovyAvailable) groovyParser!!.createLexer(project) else FallbackLexer()
+        if (NextflowEnvironmentUtils.isGroovyAvailable) groovyParser!!.createLexer(project) else FallbackLexer()
 
     override fun getFileNodeType(): IFileElementType = FILE
     override fun getWhitespaceTokens(): TokenSet = groovyParser?.whitespaceTokens ?: TokenSet.EMPTY
     override fun getCommentTokens(): TokenSet = groovyParser?.commentTokens ?: TokenSet.EMPTY
     override fun getStringLiteralElements(): TokenSet = groovyParser?.stringLiteralElements ?: TokenSet.EMPTY
-    override fun createParser(project: Project?): PsiParser = if (isGroovyAvailable) NextflowFlatParser() else FallbackParser()
+    override fun createParser(project: Project?): PsiParser = if (NextflowEnvironmentUtils.isGroovyAvailable) NextflowFlatParser() else FallbackParser()
 
     override fun createElement(node: ASTNode): PsiElement {
         if (node.elementType == NEXTFLOW_STRING) {
             return NextflowStringLiteral(node)
         }
-        if (!isGroovyAvailable && node.elementType == NEXTFLOW_TEXT) {
+        if (!NextflowEnvironmentUtils.isGroovyAvailable && node.elementType == NEXTFLOW_TEXT) {
             return ASTWrapperPsiElement(node)
         }
         throw UnsupportedOperationException("Nextflow uses a flat PSI tree with no composite elements except NEXTFLOW_STRING")

@@ -1,10 +1,23 @@
 package com.austinv11.nextflow.util
 
 import com.austinv11.nextflow.NextflowSettings
+import com.intellij.ide.plugins.PluginManagerCore
+import com.intellij.openapi.extensions.PluginId
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.SystemInfo
 
 object NextflowEnvironmentUtils {
+
+    /**
+     * Checks if the Groovy plugin is available and enabled in the IDE.
+     */
+    val isGroovyAvailable by lazy {
+        try {
+            PluginManagerCore.getPlugin(PluginId.getId("org.intellij.groovy"))?.let { !PluginManagerCore.isDisabled(it.pluginId) } == true
+        } catch (e: Exception) {
+            false
+        }
+    }
 
     /**
      * Retrieves the raw Nextflow binary path from settings, falling back to "nextflow" if empty.

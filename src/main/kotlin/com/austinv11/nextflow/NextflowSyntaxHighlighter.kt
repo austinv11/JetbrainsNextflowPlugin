@@ -1,11 +1,14 @@
 package com.austinv11.nextflow
 
+import com.austinv11.nextflow.util.NextflowEnvironmentUtils
+import com.intellij.ide.environment.impl.EnvironmentUtil
 import com.intellij.ide.plugins.PluginManagerCore
 import com.intellij.lexer.Lexer
 import com.intellij.lexer.LexerPosition
 import com.intellij.openapi.extensions.PluginId
 import com.intellij.openapi.editor.DefaultLanguageHighlighterColors
 import com.intellij.openapi.editor.colors.TextAttributesKey
+import com.intellij.openapi.fileTypes.PlainSyntaxHighlighter
 import com.intellij.openapi.fileTypes.SyntaxHighlighter
 import com.intellij.openapi.fileTypes.SyntaxHighlighterBase
 import com.intellij.openapi.fileTypes.SyntaxHighlighterFactory
@@ -25,22 +28,18 @@ private val NF_KEYWORDS = setOf(
 
 
 class NextflowSyntaxHighlighter(private val project: Project?) : SyntaxHighlighterBase() {
-    private val isGroovyAvailable by lazy {
-        PluginManagerCore.getPlugin(PluginId.getId("org.intellij.groovy"))?.isEnabled == true
-    }
-
     private val groovy: SyntaxHighlighter? by lazy {
-        if (isGroovyAvailable) org.jetbrains.plugins.groovy.highlighter.GroovySyntaxHighlighterFactory().getSyntaxHighlighter(project, null) else null
+        if (NextflowEnvironmentUtils.isGroovyAvailable) org.jetbrains.plugins.groovy.highlighter.GroovySyntaxHighlighterFactory().getSyntaxHighlighter(project, null) else null
     }
 
     override fun getHighlightingLexer(): Lexer {
-        return if (isGroovyAvailable) createGroovyLexer()
+        return if (NextflowEnvironmentUtils.isGroovyAvailable) createGroovyLexer()
         else FallbackLexer()
     }
 
     override fun getTokenHighlights(tokenType: IElementType?): Array<TextAttributesKey> =
         if (tokenType === NF_KEYWORD) pack(DefaultLanguageHighlighterColors.KEYWORD)
-        else if (isGroovyAvailable) groovy?.getTokenHighlights(tokenType) ?: emptyArray()
+        else if (NextflowEnvironmentUtils.isGroovyAvailable) groovy?.getTokenHighlights(tokenType) ?: emptyArray()
         else emptyArray()
     private fun createGroovyLexer(): Lexer = NextflowKeywordLexer(org.jetbrains.plugins.groovy.lang.parser.GroovyParserDefinition().createLexer(project))
 
@@ -73,6 +72,10 @@ class NextflowSyntaxHighlighter(private val project: Project?) : SyntaxHighlight
 }
 
 class NextflowSyntaxHighlighterFactory : SyntaxHighlighterFactory() {
-    override fun getSyntaxHighlighter(project: Project?, virtualFile: VirtualFile?): SyntaxHighlighter =
-        NextflowSyntaxHighlighter(project)
+
+    override fun getSyntaxHighlighter(project: Project?, virtualFile: VirtualFile?): SyntaxHighlighter {
+        return if (NextflowEnvironmentUtils.isGroovyAvailable) {
+            NextflowSyntaxHighlighter(project)
+        } else { PlainSyntaxHighlighter() }
+    }
 }
