@@ -259,7 +259,7 @@ val downloadTextmateBundles by tasks.registering {
                 grammarFile.writeText(text)
             }
 
-            groovyGrammarFile.delete()
+            // groovyGrammarFile.delete() // Kept to act as a fallback for pure Groovy files
         }
 
         // Download language-configuration.json to the bundle root so the 'configuration' field
@@ -287,18 +287,30 @@ val downloadTextmateBundles by tasks.registering {
         @Suppress("UNCHECKED_CAST")
         val contributes = canonicalPackageJson["contributes"] as Map<String, Any>
 
-        // Drop the standalone groovy grammar — its rules are now merged into nextflow/nextflow-config.
+        // Keep the standalone groovy grammar to act as a fallback for pure Groovy files.
         @Suppress("UNCHECKED_CAST")
-        val grammars = (contributes["grammars"] as? List<Map<String, Any>>)
-            ?.filter { it["scopeName"] != "source.nextflow-groovy" }
+        val rawGrammars = (contributes["grammars"] as? List<Map<String, Any>>)
+        val grammars = rawGrammars?.map { grammar ->
+            if (grammar["scopeName"] == "source.nextflow-groovy") {
+                grammar + mapOf("language" to "groovy")
+            } else {
+                grammar
+            }
+        }
 
         // Strip only the 'icon' field from language entries (references images we don't ship).
         // 'configuration' is kept — it now resolves to the language-configuration.json we downloaded.
         // All extensions (.nf, .config) are kept so the TextMate highlighter fires for those files.
         @Suppress("UNCHECKED_CAST")
-        val languages = (contributes["languages"] as? List<Map<String, Any>>)?.map { lang ->
+        val baseLanguages = (contributes["languages"] as? List<Map<String, Any>>)?.map { lang ->
             lang.filterKeys { it != "icon" }
         }
+        val languages = (baseLanguages ?: emptyList()) + listOf(mapOf(
+            "id" to "groovy",
+            "aliases" to listOf("Groovy", "groovy"),
+            "extensions" to listOf(".groovy", ".gvy", ".gy", ".gsh"),
+            "configuration" to "./language-configuration.json"
+        ))
 
         outputDir.file("package.json").asFile.writeText(
             JsonOutput.prettyPrint(JsonOutput.toJson(mapOf(
