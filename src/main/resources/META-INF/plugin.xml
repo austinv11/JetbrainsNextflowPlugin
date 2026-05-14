@@ -6,7 +6,8 @@
 
     <dependencies>
         <plugin id="com.intellij.modules.platform"/>
-        <plugin id="org.intellij.groovy"/>
+        <plugin id="org.intellij.groovy" optional="true" config-file="groovy-support.xml"/>
+        <plugin id="com.intellij.modules.java" optional="true" config-file="java-support.xml"/>
         <plugin id="org.jetbrains.plugins.textmate"/>
         <plugin id="org.jetbrains.plugins.terminal"/>
         <plugin id="com.jetbrains.sh"/>
@@ -19,21 +20,14 @@
     <extensions defaultExtensionNs="com.intellij">
         <fileType name="Nextflow" language="Nextflow" implementationClass="com.austinv11.nextflow.NextflowFileType" fieldName="INSTANCE" extensions="nf;nf.test" fileNames="nextflow.config"/>
 
-        <!-- Delegate parsing to Groovy — Nextflow is Groovy-based, so Groovy's lexer/parser
-             give IntelliJ a proper PSI tree and correct prefix computation for completion.
-             createFile() is overridden to use NextflowLanguage so the file root is Nextflow,
-             not Groovy. Syntax highlighting is intentionally left to the TextMate bundle
-             so that Nextflow-specific keywords (process, workflow, channel operators) are
-             highlighted correctly. -->
+        <!-- We must register the single real parser definition here so TextMate can see it,
+             but internally it delegates to Groovy or falls back to standard tokens dynamically -->
         <lang.parserDefinition language="Nextflow" implementationClass="com.austinv11.nextflow.NextflowParserDefinition"/>
-        <lang.commenter language="Nextflow" implementationClass="org.jetbrains.plugins.groovy.highlighter.GroovyCommenter"/>
-        <lang.braceMatcher language="Nextflow" implementationClass="org.jetbrains.plugins.groovy.highlighter.GroovyBraceMatcher"/>
-        <lang.quoteHandler language="Nextflow" implementationClass="org.jetbrains.plugins.groovy.editor.GroovyQuoteHandler"/>
         <lang.syntaxHighlighter language="Nextflow" implementationClass="com.austinv11.nextflow.NextflowSyntaxHighlighter"/>
         <lang.syntaxHighlighterFactory language="Nextflow" implementationClass="com.austinv11.nextflow.NextflowSyntaxHighlighterFactory"/>
+        <multiHostInjector implementation="com.austinv11.nextflow.NextflowLanguageInjector"/>
 
         <fileTypeOverrider implementation="com.austinv11.nextflow.NextflowFileTypeOverrider"/>
-        <typedHandler implementation="com.austinv11.nextflow.NextflowCompletionAutoPopupHandler"/>
 
         <projectConfigurable
                 groupId="tools"
@@ -57,12 +51,6 @@
         <internalFileTemplate name="Nextflow Config"/>
         <internalFileTemplate name="Nextflow Test"/>
         <editorNotificationProvider implementation="com.austinv11.nextflow.inspections.NextflowMissingFilesNotificationProvider"/>
-        <multiHostInjector implementation="com.austinv11.nextflow.NextflowLanguageInjector"/>
-        <psi.referenceContributor language="Nextflow" implementation="com.austinv11.nextflow.NextflowFileReferenceContributor"/>
-        <configurationType implementation="com.austinv11.nextflow.execution.NextflowRunConfigurationType" />
-        <runConfigurationProducer implementation="com.austinv11.nextflow.execution.NextflowRunConfigurationProducer" />
-        <codeInsight.lineMarkerProvider language="Nextflow" implementationClass="com.austinv11.nextflow.execution.NextflowRunLineMarkerContributor" />
-        <programRunner implementation="com.austinv11.nextflow.execution.NextflowDebugRunner" />
         <newProjectWizard.languageGenerator implementation="com.austinv11.nextflow.project.NextflowProjectWizard"/>
     </extensions>
 

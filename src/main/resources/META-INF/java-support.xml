@@ -1,0 +1,7 @@
+<idea-plugin>
+    <extensions defaultExtensionNs="com.intellij">
+        <configurationType implementation="com.austinv11.nextflow.execution.NextflowRunConfigurationType" />
+        <runConfigurationProducer implementation="com.austinv11.nextflow.execution.NextflowRunConfigurationProducer" />
+        <programRunner implementation="com.austinv11.nextflow.execution.NextflowDebugRunner" />
+    </extensions>
+</idea-plugin>

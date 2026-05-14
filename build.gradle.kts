@@ -38,6 +38,7 @@ dependencies {
         bundledPlugin("org.jetbrains.plugins.textmate")
         bundledPlugin("org.jetbrains.plugins.terminal")
         bundledPlugin("org.intellij.groovy")
+        bundledPlugin("com.intellij.java")
         bundledPlugin("com.jetbrains.sh")
         testFramework(org.jetbrains.intellij.platform.gradle.TestFrameworkType.Platform)
     }
@@ -55,7 +56,7 @@ changelog {
     version = project.version.toString()
     path = layout.projectDirectory.file("CHANGELOG.md").asFile.absolutePath
     header = provider { "[${version.get()}]" }
-    headerParserRegex = ".*"
+    headerParserRegex = "\\[?([0-9a-zA-Z\\.\\-]+)\\]?"
     itemPrefix = "-"
     keepUnreleasedSection = true
     unreleasedTerm = "[Unreleased]"
@@ -79,7 +80,8 @@ intellijPlatform {
         changeNotes = provider {
             changelog.renderItem(
                 changelog.getOrNull(project.version.toString())
-                    ?: changelog.getUnreleased()
+                    ?: changelog.getOrNull("Unreleased") ?: changelog.getUnreleased()
+
             )
         }
     }

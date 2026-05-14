@@ -3,7 +3,6 @@ package com.austinv11.nextflow
 import com.intellij.openapi.editor.DefaultLanguageHighlighterColors
 import com.intellij.psi.TokenType
 import com.intellij.testFramework.fixtures.BasePlatformTestCase
-import org.jetbrains.plugins.groovy.lang.lexer.GroovyTokenTypes
 
 class NextflowSyntaxHighlighterTest : BasePlatformTestCase() {
     fun testKeywordsAreHighlighted() {
@@ -22,7 +21,8 @@ class NextflowSyntaxHighlighterTest : BasePlatformTestCase() {
         assertEquals(TokenType.WHITE_SPACE, lexer.tokenType)
 
         lexer.advance()
-        assertEquals(GroovyTokenTypes.mIDENT, lexer.tokenType)
+        val nextType = lexer.tokenType.toString()
+        assertTrue(nextType == "mIDENT" || nextType == "identifier")
         assertEquals("foo", lexer.tokenText)
     }
 }

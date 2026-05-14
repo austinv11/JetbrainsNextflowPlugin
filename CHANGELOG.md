@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## Added
 - Add a plugin thumbnail icon
 
+## Changed
+- Made groovy inspections optional when outside of IntelliJ
+- Made debug configurations dependent on IntelliJ (It requires the Java Debugger)
+
 ## [1.0.3]
 
 ### Added
