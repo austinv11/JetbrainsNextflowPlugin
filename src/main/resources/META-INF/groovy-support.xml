@@ -5,6 +5,5 @@
         <lang.quoteHandler language="Nextflow" implementationClass="org.jetbrains.plugins.groovy.editor.GroovyQuoteHandler"/>
         <typedHandler implementation="com.austinv11.nextflow.NextflowCompletionAutoPopupHandler"/>
         <psi.referenceContributor language="Nextflow" implementation="com.austinv11.nextflow.NextflowFileReferenceContributor"/>
-        <codeInsight.lineMarkerProvider language="Nextflow" implementationClass="com.austinv11.nextflow.execution.NextflowRunLineMarkerContributor" />
     </extensions>
 </idea-plugin>

@@ -52,6 +52,9 @@
         <internalFileTemplate name="Nextflow Test"/>
         <editorNotificationProvider implementation="com.austinv11.nextflow.inspections.NextflowMissingFilesNotificationProvider"/>
         <newProjectWizard.languageGenerator implementation="com.austinv11.nextflow.project.NextflowProjectWizard"/>
+        <codeInsight.lineMarkerProvider language="Nextflow" implementationClass="com.austinv11.nextflow.execution.NextflowRunLineMarkerContributor" />
+        <configurationType implementation="com.austinv11.nextflow.execution.NextflowRunConfigurationType" />
+        <runConfigurationProducer implementation="com.austinv11.nextflow.execution.NextflowRunConfigurationProducer" />
     </extensions>
 
     <actions>

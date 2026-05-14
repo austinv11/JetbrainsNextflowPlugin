@@ -9,8 +9,6 @@ import com.intellij.ui.components.JBTextField
 import com.intellij.ui.dsl.builder.AlignX
 import com.intellij.ui.dsl.builder.panel
 import javax.swing.JComponent
-import com.intellij.execution.ui.DefaultJreSelector
-import com.intellij.execution.ui.JrePathEditor
 
 class NextflowRunConfigurationEditor(private val project: Project) : SettingsEditor<NextflowRunConfiguration>() {
     private val scriptPathField = TextFieldWithBrowseButton()
