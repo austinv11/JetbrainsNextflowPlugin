@@ -95,15 +95,17 @@ internal class FallbackLexer : LexerBase() {
     override fun getTokenType(): IElementType? {
         if (position >= end) return null
 
-        // Match simple spaces/newlines
         val c = buffer[position]
         if (c.isWhitespace()) {
             var i = position
             while (i < end && buffer[i].isWhitespace()) i++
-            return com.intellij.psi.TokenType.WHITE_SPACE // Break on whitespace
+            return com.intellij.psi.TokenType.WHITE_SPACE
         }
 
-        // Otherwise just match next char as text to allow TextMate to inject via text offsets
+        if (c == '\'' || c == '"') {
+            return NEXTFLOW_STRING
+        }
+
         return NEXTFLOW_TEXT
     }
 
@@ -117,8 +119,37 @@ internal class FallbackLexer : LexerBase() {
             while (i < end && buffer[i].isWhitespace()) i++
             return i
         }
-        // Advance by 1 char for general text, TextMate parses over these
-        return position + 1
+
+        if (c == '\'' || c == '"') {
+            val quote = c
+            var i = position + 1
+            var isTriple = false
+            if (i + 1 < end && buffer[i] == quote && buffer[i+1] == quote) {
+                isTriple = true
+                i += 2
+            }
+            while (i < end) {
+                if (buffer[i] == '\\') {
+                    i += 2
+                    continue
+                }
+                if (isTriple) {
+                    if (buffer[i] == quote && i + 2 < end && buffer[i+1] == quote && buffer[i+2] == quote) {
+                        return i + 3
+                    }
+                } else if (buffer[i] == quote) {
+                    return i + 1
+                }
+                i++
+            }
+            return end
+        }
+
+        var i = position + 1
+        while (i < end && !buffer[i].isWhitespace() && buffer[i] != '\'' && buffer[i] != '"') {
+            i++
+        }
+        return i
     }
 
     override fun advance() { position = getTokenEnd() }

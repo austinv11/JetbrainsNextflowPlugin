@@ -76,6 +76,12 @@ class NextflowSyntaxHighlighterFactory : SyntaxHighlighterFactory() {
     override fun getSyntaxHighlighter(project: Project?, virtualFile: VirtualFile?): SyntaxHighlighter {
         return if (NextflowEnvironmentUtils.isGroovyAvailable) {
             NextflowSyntaxHighlighter(project)
-        } else { PlainSyntaxHighlighter() }
+        } else {
+            // TextMate internally highlights the file using its TextMateEditorHighlighter when the extensions match.
+            // When Groovy is absent, we use FallbackLexer to emit NEXTFLOW_STRING for Bash injection.
+            // If we try to return TextMateSyntaxHighlighterFactory here, it crashes because it's not registered properly.
+            // Instead we return PlainSyntaxHighlighter which doesn't do anything, but doesn't override TextMate's internal background highlighting.
+            PlainSyntaxHighlighter()
+        }
     }
 }
