@@ -2,7 +2,6 @@
     <id>com.austinv11.nextflow</id>
     <name>Nextflow Support</name>
     <vendor>austinv11</vendor>
-    <icon>META-INF/pluginIcon.svg</icon>
 
     <dependencies>
         <plugin id="com.intellij.modules.platform"/>

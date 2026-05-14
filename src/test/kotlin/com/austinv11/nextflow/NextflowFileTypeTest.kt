@@ -2,8 +2,30 @@ package com.austinv11.nextflow
 
 import com.intellij.openapi.fileTypes.FileTypeManager
 import com.intellij.testFramework.fixtures.BasePlatformTestCase
+import com.intellij.openapi.application.ApplicationManager
 
 class NextflowFileTypeTest : BasePlatformTestCase() {
+
+    override fun setUp() {
+        super.setUp()
+        ApplicationManager.getApplication().invokeAndWait {
+            ApplicationManager.getApplication().runWriteAction {
+                FileTypeManager.getInstance().associateExtension(NextflowFileType.INSTANCE, "nf")
+                FileTypeManager.getInstance().associateExtension(NextflowFileType.INSTANCE, "nf.test")
+            }
+        }
+    }
+
+    override fun tearDown() {
+        ApplicationManager.getApplication().invokeAndWait {
+            ApplicationManager.getApplication().runWriteAction {
+                FileTypeManager.getInstance().removeAssociatedExtension(NextflowFileType.INSTANCE, "nf")
+                FileTypeManager.getInstance().removeAssociatedExtension(NextflowFileType.INSTANCE, "nf.test")
+            }
+        }
+        super.tearDown()
+    }
+
     fun testFileTypeRegistration() {
         val fileTypeManager = FileTypeManager.getInstance()
 
@@ -12,9 +34,6 @@ class NextflowFileTypeTest : BasePlatformTestCase() {
         assertEquals("Nextflow", nfFileType.name)
         assertEquals("nf", nfFileType.defaultExtension)
 
-        val configFileType = fileTypeManager.getFileTypeByExtension("config")
-        // Note: nextflow.config isn't mapped just by .config extension alone in filetypes
-        // But let's verify NextflowLanguage is correct
         assertEquals("Nextflow", NextflowLanguage.INSTANCE.id)
     }
 }

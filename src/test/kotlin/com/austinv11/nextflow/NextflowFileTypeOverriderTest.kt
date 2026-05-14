@@ -8,13 +8,15 @@ class NextflowFileTypeOverriderTest : BasePlatformTestCase() {
 
     fun testNextflowConfigIsOverridden() {
         val file = myFixture.configureByText("nextflow.config", "params.foo = 'bar'").virtualFile
-        val fileType = FileTypeManager.getInstance().getFileTypeByFile(file)
+        val overrider = NextflowFileTypeOverrider()
+        val fileType = overrider.getOverriddenFileType(file)
         assertEquals(NextflowFileType.INSTANCE, fileType)
     }
 
     fun testNfTestIsOverridden() {
         val file = myFixture.configureByText("test.nf.test", "assert true").virtualFile
-        val fileType = FileTypeManager.getInstance().getFileTypeByFile(file)
+        val overrider = NextflowFileTypeOverrider()
+        val fileType = overrider.getOverriddenFileType(file)
         assertEquals(NextflowFileType.INSTANCE, fileType)
     }
 
