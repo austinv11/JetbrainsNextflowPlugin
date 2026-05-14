@@ -218,8 +218,7 @@ class NextflowProjectPanel(private val project: Project) {
             .filter { it.isFile && it.name.endsWith(".nf.test") }
             .forEach { file ->
                 val text = file.readText()
-                val regex = Regex("""^\s*(process|workflow)\s+\"(\w+)\"""", setOf(RegexOption.MULTILINE))
-                regex.findAll(text).forEach { matchResult ->
+                NF_TEST_REGEX.findAll(text).forEach { matchResult ->
                     val name = matchResult.groupValues[2]
                     val index = matchResult.range.first
                     val line = text.substring(0, index).count { it == '\n' }
@@ -227,6 +226,10 @@ class NextflowProjectPanel(private val project: Project) {
                 }
             }
         return results
+    }
+
+    companion object {
+        private val NF_TEST_REGEX = Regex("""^\s*(process|workflow)\s+\"(\w+)\"""", setOf(RegexOption.MULTILINE))
     }
 
     private class ProjectTreeCellRenderer : DefaultTreeCellRenderer() {
