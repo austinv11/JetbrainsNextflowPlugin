@@ -1,6 +1,6 @@
 <idea-plugin>
     <id>com.austinv11.nextflow</id>
-    <name>Nextflow</name>
+    <name>Nextflow Language</name>
     <vendor>austinv11</vendor>
 
     <dependencies>

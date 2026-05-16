@@ -66,7 +66,7 @@ changelog {
 intellijPlatform {
     pluginConfiguration {
         id = "com.austinv11.nextflow"
-        name = "Nextflow"
+        name = "Nextflow Language"
         version = project.version.toString()
         vendor {
             name = "austinv11"
