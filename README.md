@@ -1,6 +1,6 @@
 # JetBrains Nextflow Support
 
-![Version](https://img.shields.io/badge/version-latest-blue.svg)
+![Version](https://img.shields.io/github/v/release/austinv11/JetbrainsNextflowPlugin)
 ![License](https://img.shields.io/badge/license-MIT-green.svg)
 [![JetBrains Plugin](https://img.shields.io/badge/JetBrains-Plugin-orange.svg)](https://plugins.jetbrains.com/plugin/31666-nextflow-support)
 
