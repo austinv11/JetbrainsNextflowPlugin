@@ -1,7 +1,7 @@
 package com.austinv11.nextflow.util
 
 import com.austinv11.nextflow.NextflowSettings
-import com.intellij.ide.plugins.PluginManagerCore
+import com.intellij.ide.plugins.PluginManager
 import com.intellij.openapi.extensions.PluginId
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.SystemInfo
@@ -13,7 +13,7 @@ object NextflowEnvironmentUtils {
      */
     val isGroovyAvailable by lazy {
         try {
-            PluginManagerCore.getPlugin(PluginId.getId("org.intellij.groovy"))?.let { !PluginManagerCore.isDisabled(it.pluginId) } == true
+            PluginManager.getInstance().findEnabledPlugin(PluginId.getId("org.intellij.groovy")) != null
         } catch (e: Exception) {
             false
         }
