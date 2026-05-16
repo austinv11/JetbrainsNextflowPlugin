@@ -34,7 +34,7 @@ class NextflowSyntaxHighlighter(private val project: Project?) : SyntaxHighlight
 
     override fun getHighlightingLexer(): Lexer {
         return if (NextflowEnvironmentUtils.isGroovyAvailable) createGroovyLexer()
-        else FallbackLexer()
+        else org.jetbrains.plugins.textmate.psi.TextMateParserDefinition().createLexer(project)
     }
 
     override fun getTokenHighlights(tokenType: IElementType?): Array<TextAttributesKey> =
@@ -74,14 +74,18 @@ class NextflowSyntaxHighlighter(private val project: Project?) : SyntaxHighlight
 class NextflowSyntaxHighlighterFactory : SyntaxHighlighterFactory() {
 
     override fun getSyntaxHighlighter(project: Project?, virtualFile: VirtualFile?): SyntaxHighlighter {
-        return if (NextflowEnvironmentUtils.isGroovyAvailable) {
-            NextflowSyntaxHighlighter(project)
-        } else {
-            // TextMate internally highlights the file using its TextMateEditorHighlighter when the extensions match.
-            // When Groovy is absent, we use FallbackLexer to emit NEXTFLOW_STRING for Bash injection.
-            // If we try to return TextMateSyntaxHighlighterFactory here, it crashes because it's not registered properly.
-            // Instead we return PlainSyntaxHighlighter which doesn't do anything, but doesn't override TextMate's internal background highlighting.
-            PlainSyntaxHighlighter()
+        if (NextflowEnvironmentUtils.isGroovyAvailable) {
+            return NextflowSyntaxHighlighter(project)
+        }
+
+        // Because of PluginClassLoader restrictions, directly reflecting on TextMateSyntaxHighlighterFactory fails.
+        // Returning null from a Factory crashes the IDE editor subsystem.
+        // We must provide an empty syntax highlighter so the IDE allows Editor creation to proceed,
+        // and allow TextMate service to do string-based fallback via background annotators or TextMateEditorHighlighterProvider
+        // using the file extension mapping instead of overriding the language syntax.
+        return object : SyntaxHighlighterBase() {
+            override fun getHighlightingLexer(): Lexer = org.jetbrains.plugins.textmate.psi.TextMateParserDefinition().createLexer(project)
+            override fun getTokenHighlights(tokenType: IElementType?): Array<TextAttributesKey> = emptyArray()
         }
     }
 }

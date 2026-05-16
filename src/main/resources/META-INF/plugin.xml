@@ -17,12 +17,12 @@
     </dependencies>
 
     <extensions defaultExtensionNs="com.intellij">
-        <fileType name="Nextflow" language="Nextflow" implementationClass="com.austinv11.nextflow.NextflowFileType" fieldName="INSTANCE" extensions="nf;nf.test" fileNames="nextflow.config"/>
+        <!-- We unmap the hardcoded fileType so NextflowFileTypeOverrider can handle it dynamically -->
+
 
         <!-- We must register the single real parser definition here so TextMate can see it,
              but internally it delegates to Groovy or falls back to standard tokens dynamically -->
         <lang.parserDefinition language="Nextflow" implementationClass="com.austinv11.nextflow.NextflowParserDefinition"/>
-        <lang.syntaxHighlighter language="Nextflow" implementationClass="com.austinv11.nextflow.NextflowSyntaxHighlighter"/>
         <lang.syntaxHighlighterFactory language="Nextflow" implementationClass="com.austinv11.nextflow.NextflowSyntaxHighlighterFactory"/>
         <multiHostInjector implementation="com.austinv11.nextflow.NextflowLanguageInjector"/>
 

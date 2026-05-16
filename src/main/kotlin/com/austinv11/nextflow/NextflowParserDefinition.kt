@@ -26,7 +26,7 @@ private val FILE = IFileElementType(NextflowLanguage.INSTANCE)
 val NEXTFLOW_STRING = IElementType("NEXTFLOW_STRING", NextflowLanguage.INSTANCE)
 val NEXTFLOW_TEXT = IElementType("NEXTFLOW_TEXT", NextflowLanguage.INSTANCE)
 
-class NextflowParserDefinition : ParserDefinition {
+class NextflowParserDefinition : org.jetbrains.plugins.textmate.psi.TextMateParserDefinition() {
 
     private val groovyParser: ParserDefinition? by lazy {
         if (NextflowEnvironmentUtils.isGroovyAvailable) {
@@ -35,13 +35,13 @@ class NextflowParserDefinition : ParserDefinition {
     }
 
     override fun createLexer(project: Project?): Lexer =
-        if (NextflowEnvironmentUtils.isGroovyAvailable) groovyParser!!.createLexer(project) else FallbackLexer()
+        if (NextflowEnvironmentUtils.isGroovyAvailable) groovyParser!!.createLexer(project) else super.createLexer(project)
 
     override fun getFileNodeType(): IFileElementType = FILE
     override fun getWhitespaceTokens(): TokenSet = groovyParser?.whitespaceTokens ?: TokenSet.EMPTY
     override fun getCommentTokens(): TokenSet = groovyParser?.commentTokens ?: TokenSet.EMPTY
     override fun getStringLiteralElements(): TokenSet = groovyParser?.stringLiteralElements ?: TokenSet.EMPTY
-    override fun createParser(project: Project?): PsiParser = if (NextflowEnvironmentUtils.isGroovyAvailable) NextflowFlatParser() else FallbackParser()
+    override fun createParser(project: Project?): PsiParser = if (NextflowEnvironmentUtils.isGroovyAvailable) NextflowFlatParser() else super.createParser(project)
 
     override fun createElement(node: ASTNode): PsiElement {
         if (node.elementType == NEXTFLOW_STRING) {
@@ -50,7 +50,7 @@ class NextflowParserDefinition : ParserDefinition {
         if (!NextflowEnvironmentUtils.isGroovyAvailable && node.elementType == NEXTFLOW_TEXT) {
             return ASTWrapperPsiElement(node)
         }
-        throw UnsupportedOperationException("Nextflow uses a flat PSI tree with no composite elements except NEXTFLOW_STRING")
+        return super.createElement(node)
     }
 
     override fun createFile(viewProvider: FileViewProvider): PsiFile = NextflowPsiFile(viewProvider)
@@ -72,96 +72,6 @@ private class NextflowFlatParser : PsiParser {
             } else {
                 builder.advanceLexer()
             }
-        }
-        marker.done(root)
-        return builder.treeBuilt
-    }
-}
-
-internal class FallbackLexer : LexerBase() {
-    private var buffer: CharSequence = ""
-    private var start = 0
-    private var end = 0
-    private var position = 0
-
-    override fun start(buffer: CharSequence, startOffset: Int, endOffset: Int, initialState: Int) {
-        this.buffer = buffer
-        this.start = startOffset
-        this.end = endOffset
-        this.position = startOffset
-    }
-
-    override fun getState(): Int = 0
-    override fun getTokenType(): IElementType? {
-        if (position >= end) return null
-
-        val c = buffer[position]
-        if (c.isWhitespace()) {
-            var i = position
-            while (i < end && buffer[i].isWhitespace()) i++
-            return com.intellij.psi.TokenType.WHITE_SPACE
-        }
-
-        if (c == '\'' || c == '"') {
-            return NEXTFLOW_STRING
-        }
-
-        return NEXTFLOW_TEXT
-    }
-
-    override fun getTokenStart(): Int = position
-
-    override fun getTokenEnd(): Int {
-        if (position >= end) return position
-        val c = buffer[position]
-        if (c.isWhitespace()) {
-            var i = position
-            while (i < end && buffer[i].isWhitespace()) i++
-            return i
-        }
-
-        if (c == '\'' || c == '"') {
-            val quote = c
-            var i = position + 1
-            var isTriple = false
-            if (i + 1 < end && buffer[i] == quote && buffer[i+1] == quote) {
-                isTriple = true
-                i += 2
-            }
-            while (i < end) {
-                if (buffer[i] == '\\') {
-                    i += 2
-                    continue
-                }
-                if (isTriple) {
-                    if (buffer[i] == quote && i + 2 < end && buffer[i+1] == quote && buffer[i+2] == quote) {
-                        return i + 3
-                    }
-                } else if (buffer[i] == quote) {
-                    return i + 1
-                }
-                i++
-            }
-            return end
-        }
-
-        var i = position + 1
-        while (i < end && !buffer[i].isWhitespace() && buffer[i] != '\'' && buffer[i] != '"') {
-            i++
-        }
-        return i
-    }
-
-    override fun advance() { position = getTokenEnd() }
-    override fun getBufferSequence(): CharSequence = buffer
-    override fun getBufferEnd(): Int = end
-}
-
-private class FallbackParser : PsiParser {
-    override fun parse(root: IElementType, builder: PsiBuilder): ASTNode {
-        val marker = builder.mark()
-        while (!builder.eof()) {
-            builder.advanceLexer()
         }
         marker.done(root)
         return builder.treeBuilt
