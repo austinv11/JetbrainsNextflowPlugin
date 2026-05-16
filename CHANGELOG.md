@@ -5,6 +5,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.0]
+
 ## Added
 - Add a plugin thumbnail icon
 - Better support for non-IntelliJ IDEs (like PyCharm, WebStorm, etc.)
