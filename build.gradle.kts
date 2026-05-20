@@ -56,7 +56,7 @@ changelog {
     version = project.version.toString()
     path = layout.projectDirectory.file("CHANGELOG.md").asFile.absolutePath
     header = provider { "[${version.get()}]" }
-    headerParserRegex = "\\[?([0-9a-zA-Z\\.\\-]+)\\]?"
+    headerParserRegex = """(?:\[?)([A-Za-z0-9\-\.]+)(?:\]?)"""
     itemPrefix = "-"
     keepUnreleasedSection = true
     unreleasedTerm = "[Unreleased]"
@@ -80,7 +80,7 @@ intellijPlatform {
         changeNotes = provider {
             changelog.renderItem(
                 changelog.getOrNull(project.version.toString())
-                    ?: changelog.getOrNull("Unreleased") ?: changelog.getUnreleased()
+                    ?: changelog.getOrNull(changelog.unreleasedTerm.get()) ?: changelog.getOrNull("Unreleased") ?: changelog.getUnreleased()
 
             )
         }
