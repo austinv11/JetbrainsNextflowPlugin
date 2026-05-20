@@ -5,6 +5,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+
+## [1.1.3]
+
+## Changed
+- Made groovy integrations more lazy to improve non-IntelliJ IDEs.
+
+## [1.1.0]
+
+## Added
+- Add a plugin thumbnail icon
+- Better support for non-IntelliJ IDEs (like PyCharm, WebStorm, etc.)
+
+## Changed
+- Made groovy inspections optional when outside of IntelliJ
+- Made debug configurations dependent on IntelliJ (It requires the Java Debugger)
+
+
 ## [1.1.0]
 
 ## Added

@@ -1,5 +1,6 @@
 package com.austinv11.nextflow
 
+import com.austinv11.nextflow.util.GroovyFacade
 import com.austinv11.nextflow.util.NextflowEnvironmentUtils
 import com.intellij.ide.plugins.PluginManagerCore
 import com.intellij.openapi.extensions.PluginId
@@ -30,7 +31,7 @@ class NextflowParserDefinition : org.jetbrains.plugins.textmate.psi.TextMatePars
 
     private val groovyParser: ParserDefinition? by lazy {
         if (NextflowEnvironmentUtils.isGroovyAvailable) {
-            org.jetbrains.plugins.groovy.lang.parser.GroovyParserDefinition()
+            GroovyFacade.createGroovyParserDefinition()
         } else null
     }
 
@@ -38,9 +39,9 @@ class NextflowParserDefinition : org.jetbrains.plugins.textmate.psi.TextMatePars
         if (NextflowEnvironmentUtils.isGroovyAvailable) groovyParser!!.createLexer(project) else super.createLexer(project)
 
     override fun getFileNodeType(): IFileElementType = FILE
-    override fun getWhitespaceTokens(): TokenSet = groovyParser?.whitespaceTokens ?: TokenSet.EMPTY
-    override fun getCommentTokens(): TokenSet = groovyParser?.commentTokens ?: TokenSet.EMPTY
-    override fun getStringLiteralElements(): TokenSet = groovyParser?.stringLiteralElements ?: TokenSet.EMPTY
+    override fun getWhitespaceTokens(): TokenSet = if (NextflowEnvironmentUtils.isGroovyAvailable) GroovyFacade.getWhitespaceTokens() else TokenSet.EMPTY
+    override fun getCommentTokens(): TokenSet = if (NextflowEnvironmentUtils.isGroovyAvailable) GroovyFacade.getCommentTokens() else TokenSet.EMPTY
+    override fun getStringLiteralElements(): TokenSet = if (NextflowEnvironmentUtils.isGroovyAvailable) GroovyFacade.getStringLiteralElements() else TokenSet.EMPTY
     override fun createParser(project: Project?): PsiParser = if (NextflowEnvironmentUtils.isGroovyAvailable) NextflowFlatParser() else super.createParser(project)
 
     override fun createElement(node: ASTNode): PsiElement {
@@ -57,11 +58,10 @@ class NextflowParserDefinition : org.jetbrains.plugins.textmate.psi.TextMatePars
 }
 
 private class NextflowFlatParser : PsiParser {
-    private val groovyParser by lazy { org.jetbrains.plugins.groovy.lang.parser.GroovyParserDefinition() }
 
     override fun parse(root: IElementType, builder: PsiBuilder): ASTNode {
         val marker = builder.mark()
-        val stringTokens = groovyParser.stringLiteralElements
+        val stringTokens = GroovyFacade.getStringLiteralElements()
 
         while (!builder.eof()) {
             val tokenType = builder.tokenType

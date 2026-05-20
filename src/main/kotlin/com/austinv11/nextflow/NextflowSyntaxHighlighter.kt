@@ -1,5 +1,6 @@
 package com.austinv11.nextflow
 
+import com.austinv11.nextflow.util.GroovyFacade
 import com.austinv11.nextflow.util.NextflowEnvironmentUtils
 import com.intellij.ide.environment.impl.EnvironmentUtil
 import com.intellij.ide.plugins.PluginManagerCore
@@ -29,7 +30,7 @@ private val NF_KEYWORDS = setOf(
 
 class NextflowSyntaxHighlighter(private val project: Project?) : SyntaxHighlighterBase() {
     private val groovy: SyntaxHighlighter? by lazy {
-        if (NextflowEnvironmentUtils.isGroovyAvailable) org.jetbrains.plugins.groovy.highlighter.GroovySyntaxHighlighterFactory().getSyntaxHighlighter(project, null) else null
+        if (NextflowEnvironmentUtils.isGroovyAvailable) GroovyFacade.createGroovySyntaxHighlighter(project) else null
     }
 
     override fun getHighlightingLexer(): Lexer {
@@ -41,7 +42,7 @@ class NextflowSyntaxHighlighter(private val project: Project?) : SyntaxHighlight
         if (tokenType === NF_KEYWORD) pack(DefaultLanguageHighlighterColors.KEYWORD)
         else if (NextflowEnvironmentUtils.isGroovyAvailable) groovy?.getTokenHighlights(tokenType) ?: emptyArray()
         else emptyArray()
-    private fun createGroovyLexer(): Lexer = NextflowKeywordLexer(org.jetbrains.plugins.groovy.lang.parser.GroovyParserDefinition().createLexer(project))
+    private fun createGroovyLexer(): Lexer = NextflowKeywordLexer(GroovyFacade.createGroovyLexer(project))
 
     // Wraps Groovy's lexer and remaps known Nextflow identifier tokens to NF_KEYWORD.
     // All other methods delegate to the base so that token offsets and lexer state
@@ -62,7 +63,7 @@ class NextflowSyntaxHighlighter(private val project: Project?) : SyntaxHighlight
         override fun getTokenType(): IElementType? {
             val type = base.tokenType ?: return null
             // We fully qualify to avoid classloader issues if Groovy isn't available
-            if (type == org.jetbrains.plugins.groovy.lang.lexer.GroovyTokenTypes.mIDENT) {
+            if (GroovyFacade.isGroovyIdent(type)) {
                 val text = base.bufferSequence.subSequence(base.tokenStart, base.tokenEnd).toString()
                 if (text in NF_KEYWORDS) return NF_KEYWORD
             }
