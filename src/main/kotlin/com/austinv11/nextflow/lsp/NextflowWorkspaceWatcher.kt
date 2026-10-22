@@ -113,10 +113,10 @@ internal class NextflowWorkspaceChanges(
             if (!included(candidate)) return false
             if (candidate.isDirectory) return candidate.children.any { visit(it) }
             val script = NextflowFileUtils.isNextflowScript(candidate)
-            val config = candidate.extension == "config" && candidate.name != "nf-test.config"
+            val config = NextflowFileUtils.isNextflowConfig(project, candidate)
             val schema = candidate.name == "nextflow_schema.json"
             if (!script && !config && !schema) return false
-            val synchronizedDocument = script || NextflowFileUtils.isNextflowConfig(candidate)
+            val synchronizedDocument = NextflowFileUtils.isNextflowLspFile(project, candidate)
             return !(skipOpenDocuments && synchronizedDocument && isOpen(candidate))
         }
 

@@ -27,11 +27,11 @@ class NextflowLspServerDescriptor(project: Project) : ProjectWideLspServerDescri
 
     private val logger = Logger.getInstance(NextflowLspServerDescriptor::class.java)
 
-    override fun isSupportedFile(file: VirtualFile): Boolean = NextflowFileUtils.isNextflowScript(file) || NextflowFileUtils.isNextflowConfig(file)
+    override fun isSupportedFile(file: VirtualFile): Boolean = NextflowFileUtils.isNextflowLspFile(project, file)
 
     override fun getLanguageId(file: VirtualFile): String = when {
         NextflowFileUtils.isNextflowScript(file) -> "nextflow"
-        NextflowFileUtils.isNextflowConfig(file) -> "nextflow-config"
+        NextflowFileUtils.isNextflowConfig(project, file) -> "nextflow-config"
         else -> super.getLanguageId(file)
     }
 

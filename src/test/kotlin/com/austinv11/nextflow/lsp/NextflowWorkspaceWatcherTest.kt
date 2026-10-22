@@ -50,16 +50,19 @@ class NextflowWorkspaceWatcherTest : BasePlatformTestCase() {
     }
 
     fun testOpenLspDocumentsUseLiveUpdatesButOtherInputsStillRefresh() {
-        for (name in listOf("module.nf", "nextflow.config")) {
-            val file = create(name)
+        val marker = create("nextflow.config")
+        for (file in listOf(create("module.nf"), marker, create("conf/base.config"))) {
             openFiles.add(file)
-            assertFalse(name, change { file.setBinaryContent("updated".toByteArray()) })
+            assertFalse(file.name, change { file.setBinaryContent("updated".toByteArray()) })
         }
-        for (name in listOf("conf/base.config", "nextflow_schema.json")) {
-            val file = create(name)
-            openFiles.add(file)
-            assertTrue(name, change { file.setBinaryContent("updated".toByteArray()) })
-        }
+        val schema = create("nextflow_schema.json")
+        openFiles.add(schema)
+        assertTrue(change { schema.setBinaryContent("updated".toByteArray()) })
+    }
+
+    fun testUnmarkedConfigurationFilesDoNotTriggerRestart() {
+        val file = create("application.config")
+        assertFalse(change { file.setBinaryContent("updated".toByteArray()) })
     }
 
     fun testUnrelatedFilesAndUnsupportedNfTestFilesAreIgnored() {

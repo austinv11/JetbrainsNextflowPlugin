@@ -25,6 +25,7 @@
         <lang.syntaxHighlighterFactory language="Nextflow" implementationClass="com.austinv11.nextflow.NextflowSyntaxHighlighterFactory"/>
         <multiHostInjector implementation="com.austinv11.nextflow.NextflowLanguageInjector"/>
         <fileTypeOverrider implementation="com.austinv11.nextflow.NextflowFileTypeOverrider"/>
+        <fileIconProvider implementation="com.austinv11.nextflow.NextflowFileIconProvider"/>
         <projectConfigurable
                 groupId="tools"
                 displayName="Nextflow"

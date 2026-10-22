@@ -1,5 +1,7 @@
 package com.austinv11.nextflow.util
 
+import com.intellij.openapi.project.Project
+import com.intellij.openapi.roots.ProjectFileIndex
 import com.intellij.openapi.vfs.VirtualFile
 
 object NextflowFileUtils {
@@ -22,6 +24,24 @@ object NextflowFileUtils {
     fun isNextflowConfig(fileName: String): Boolean {
         return fileName == NEXTFLOW_CONFIG_NAME
     }
+
+    /** Additional configs require a pipeline marker within the same project content root. */
+    fun isNextflowConfig(project: Project, file: VirtualFile): Boolean {
+        if (file.isDirectory) return false
+        if (isNextflowConfig(file)) return true
+        if (file.extension != "config" || file.name == "nf-test.config") return false
+        val root = ProjectFileIndex.getInstance(project).getContentRootForFile(file) ?: return false
+        var directory = file.parent
+        while (directory != null) {
+            if (directory.findChild(NEXTFLOW_CONFIG_NAME)?.isDirectory == false) return true
+            if (directory == root) break
+            directory = directory.parent
+        }
+        return false
+    }
+
+    fun isNextflowLspFile(project: Project, file: VirtualFile): Boolean =
+        !file.isDirectory && (isNextflowScript(file) || isNextflowConfig(project, file))
 
     fun isNextflowTest(file: VirtualFile): Boolean {
         return file.name.endsWith(".$NEXTFLOW_TEST_EXTENSION")

@@ -26,7 +26,7 @@ class NextflowLspServerSupportProvider : LspServerSupportProvider {
         file: VirtualFile,
         serverStarter: LspServerStarter
     ) {
-        if (NextflowFileUtils.isNextflowScript(file) || NextflowFileUtils.isNextflowConfig(file)) {
+        if (NextflowFileUtils.isNextflowLspFile(project, file)) {
             project.getService(NextflowWorkspaceWatcher::class.java)
             project.getService(NextflowLspUpdateChecker::class.java).start()
             serverStarter.ensureServerStarted(NextflowLspServerDescriptor(project))

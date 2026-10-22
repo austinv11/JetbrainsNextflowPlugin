@@ -15,7 +15,6 @@ import com.intellij.platform.lsp.api.LspServerState
 import org.eclipse.lsp4j.DocumentFormattingParams
 import org.eclipse.lsp4j.FormattingOptions
 import org.eclipse.lsp4j.Position
-import org.eclipse.lsp4j.TextDocumentIdentifier
 import org.eclipse.lsp4j.TextEdit
 import org.eclipse.lsp4j.jsonrpc.ResponseErrorException
 import kotlin.math.min
@@ -27,7 +26,7 @@ class NextflowFormatAction : AnAction() {
     override fun update(e: AnActionEvent) {
         val project = e.project
         val file = e.getData(CommonDataKeys.VIRTUAL_FILE)
-        if (project == null || file == null || !isNextflowFile(file)) {
+        if (project == null || file == null || !NextflowFileUtils.isNextflowLspFile(project, file)) {
             e.presentation.isEnabledAndVisible = false
             return
         }
@@ -41,6 +40,7 @@ class NextflowFormatAction : AnAction() {
     override fun actionPerformed(e: AnActionEvent) {
         val project = e.project ?: return
         val file = e.getData(CommonDataKeys.VIRTUAL_FILE) ?: return
+        if (!NextflowFileUtils.isNextflowLspFile(project, file)) return
         val document = FileDocumentManager.getInstance().getDocument(file) ?: return
 
         FileDocumentManager.getInstance().saveAllDocuments()
@@ -59,7 +59,7 @@ class NextflowFormatAction : AnAction() {
                 val edits = server.sendRequestSync { languageServer ->
                     languageServer.textDocumentService.formatting(
                         DocumentFormattingParams().apply {
-                            textDocument = TextDocumentIdentifier(file.url)
+                            textDocument = server.getDocumentIdentifier(file)
                             options = FormattingOptions(4, true)
                         }
                     )
@@ -120,10 +120,6 @@ class NextflowFormatAction : AnAction() {
         val lineEnd = document.getLineEndOffset(line)
         val offset = lineStart + position.character
         return min(offset, lineEnd)
-    }
-
-    private fun isNextflowFile(file: com.intellij.openapi.vfs.VirtualFile): Boolean {
-        return NextflowFileUtils.isNextflowScript(file) || NextflowFileUtils.isNextflowConfig(file)
     }
 
     private data class Edit(val start: Int, val end: Int, val newText: String)

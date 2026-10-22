@@ -2,8 +2,10 @@ package com.austinv11.nextflow
 
 import com.austinv11.nextflow.util.NextflowFileUtils
 import com.austinv11.nextflow.util.NextflowEnvironmentUtils
+import com.intellij.openapi.application.ReadAction
 import com.intellij.openapi.fileTypes.FileType
 import com.intellij.openapi.fileTypes.impl.FileTypeOverrider
+import com.intellij.openapi.project.ProjectLocator
 import com.intellij.openapi.vfs.VirtualFile
 
 class NextflowFileTypeOverrider : FileTypeOverrider {
@@ -14,10 +16,15 @@ class NextflowFileTypeOverrider : FileTypeOverrider {
             return null
         }
 
-        return if (NextflowFileUtils.isNextflowFile(file)) {
-            NextflowFileType.INSTANCE
-        } else {
-            null
+        if (file.isDirectory) return null
+        if (NextflowFileUtils.isNextflowFile(file)) return NextflowFileType.INSTANCE
+        if (file.extension != "config" || file.name == "nf-test.config") return null
+
+        val isPipelineConfig = ReadAction.compute<Boolean, RuntimeException> {
+            ProjectLocator.getInstance().getProjectsForFile(file).any { project ->
+                !project.isDisposed && NextflowFileUtils.isNextflowConfig(project, file)
+            }
         }
+        return if (isPipelineConfig) NextflowFileType.INSTANCE else null
     }
 }

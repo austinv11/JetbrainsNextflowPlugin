@@ -7,6 +7,9 @@ import com.intellij.psi.PsiFile
 class NextflowLspSemanticTokensSupport : LspSemanticTokensSupport() {
     // The platform default only requests tokens for plain-text and TextMate PSI.
     // Match the server's files regardless of which optional parser handles them.
-    override fun shouldAskServerForSemanticTokens(psiFile: PsiFile): Boolean =
-        NextflowFileUtils.isNextflowScript(psiFile.name) || NextflowFileUtils.isNextflowConfig(psiFile.name)
+    override fun shouldAskServerForSemanticTokens(psiFile: PsiFile): Boolean {
+        val file = psiFile.virtualFile
+        return if (file != null) NextflowFileUtils.isNextflowLspFile(psiFile.project, file)
+        else NextflowFileUtils.isNextflowScript(psiFile.name) || NextflowFileUtils.isNextflowConfig(psiFile.name)
+    }
 }

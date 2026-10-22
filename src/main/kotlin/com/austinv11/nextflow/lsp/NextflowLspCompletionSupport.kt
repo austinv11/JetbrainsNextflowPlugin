@@ -32,7 +32,7 @@ class NextflowLspCompletionSupport : LspCompletionSupport() {
 
     private fun isNextflowFile(file: PsiFile): Boolean {
         val vf = file.virtualFile
-        if (vf != null && NextflowFileUtils.isNextflowFile(vf)) return true
+        if (vf != null && (NextflowFileUtils.isNextflowFile(vf) || NextflowFileUtils.isNextflowLspFile(file.project, vf))) return true
         return file.language.id == "Nextflow"
     }
 }
