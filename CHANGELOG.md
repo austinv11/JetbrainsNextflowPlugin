@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Reuse matching installed servers at startup and retry unexpectedly empty GitHub release lists.
 
 ### Added
+- Automatically restart the language server after a short pause when closed pipeline files, configuration files, or parameter schemas change, or pipeline files are created, deleted, moved, or renamed. Ignore excluded directories and preserve unsaved open documents.
 - Daily language-server update checks with Install update and Dismiss actions, plus a manual check in the Tools menu. Updates stay within the selected Nextflow release series and leave custom JARs unchanged.
 
 ### Fixed
