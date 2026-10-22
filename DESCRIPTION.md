@@ -8,6 +8,7 @@ This plugin provides enhanced support for Nextflow within JetBrains environments
 * **Native Run & Debug Configurations**: Effortlessly create, execute, and remote-debug your Nextflow pipelines directly from the IDE. Includes full support for Windows Subsystem for Linux (WSL).
 * **Official Syntax Highlighting**: Highlights Nextflow-specific syntax (like processes, workflows, channels, and operators) via official TextMate bundle integration.
 * **Code Actions & Refactoring**: Utilize LSP-powered formatting and specialized actions to convert legacy scripts and pipelines to static types.
+* **Process Configuration Previews**: Inspect process directives, source locations, and overridden values from **Preview config**, with profile selection and refresh support.
 * **File Templates**: Quickly bootstrap your projects with built-in templates for `.nf`, `.nf.test`, and `nextflow.config` files.
 * **Interactive Nextflow Console**: Launch an interactive REPL console to test Nextflow logic directly within the IDE.
 * **Dedicated Tool Windows**: Specialized project and resource panels to better manage and interact with your Nextflow environment.

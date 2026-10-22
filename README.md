@@ -14,6 +14,7 @@ This plugin provides enhanced support for Nextflow within JetBrains environments
 * **Native Run & Debug Configurations**: Effortlessly create, execute, and remote-debug your Nextflow pipelines directly from the IDE. Includes full support for Windows Subsystem for Linux (WSL). Note that debugging only works on IntelliJ IDEA.
 * **Official Syntax Highlighting**: Highlights Nextflow-specific syntax (like processes, workflows, channels, and operators) via official TextMate bundle integration.
 * **Code Actions & Refactoring**: Utilize LSP-powered formatting and specialized actions to convert legacy scripts and pipelines to static types.
+* **Process Configuration Previews**: Click **Preview config** above a process to inspect directive values, their source files, and overridden settings. Select profiles from the searchable checkbox popup to update the preview automatically; use **Refresh** after configuration changes.
 * **File Templates**: Quickly bootstrap your projects with built-in templates for `.nf`, `.nf.test`, and `nextflow.config` files.
 * **Interactive Nextflow Console**: Launch an interactive REPL console to test Nextflow logic directly within the IDE.
 * **Dedicated Tool Windows**: Specialized project and resource panels to better manage and interact with your Nextflow environment.
@@ -38,6 +39,8 @@ To launch a lightweight JetBrains IDE instance with the plugin installed for man
 ```bash
 ./gradlew runIde
 ```
+
+Stop the sandbox IDE and rerun this command after plugin changes. Automatic plugin reloading is disabled because an unsafe reload can remove Nextflow file recognition until the IDE restarts.
 
 ### Building the Plugin
 To build the complete plugin distribution (which outputs a ZIP file in `build/distributions`):

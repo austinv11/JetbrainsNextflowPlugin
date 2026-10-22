@@ -12,11 +12,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Reuse matching installed servers at startup and retry unexpectedly empty GitHub release lists.
 
 ### Added
+- Open process configuration previews from the Preview config code lens, with directive sources, override precedence, and a searchable profile picker that stays open for multiple selections and refreshes automatically.
 - Enable language-server features in additional `.config` files under pipeline folders containing `nextflow.config`, excluding `nf-test.config` and unmarked project folders.
 - Automatically restart the language server after a short pause when closed pipeline files, configuration files, or parameter schemas change, or pipeline files are created, deleted, moved, or renamed. Ignore excluded directories and preserve unsaved open documents.
 - Daily language-server update checks with Install update and Dismiss actions, plus a manual check in the Tools menu. Updates stay within the selected Nextflow release series and leave custom JARs unchanged.
 
 ### Fixed
+- Disable development sandbox plugin hot reloads that can unload Nextflow support and leave scripts and configs unrecognized until restart.
 - Prevent language-server string colors from overriding embedded Bash highlighting after semantic tokens arrive; retain semantic colors for other token types.
 - Restore Bash syntax highlighting and Nextflow interpolation throughout triple-quoted process scripts in TextMate fallback mode, including long pipelines and indented closing quotes.
 - Recognize included pipeline configs as Nextflow files and show Nextflow icons with either the native parser or TextMate fallback.

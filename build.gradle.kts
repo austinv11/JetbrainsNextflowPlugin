@@ -64,6 +64,10 @@ changelog {
 }
 
 intellijPlatform {
+    // Sandbox JAR changes can trigger an unsafe unload and remove file recognition.
+    // Restart runIde to load plugin changes in a fresh classloader.
+    autoReload.set(false)
+
     pluginConfiguration {
         id = "com.austinv11.nextflow"
         name = "Nextflow Language"

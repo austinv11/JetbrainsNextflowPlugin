@@ -32,10 +32,10 @@ import kotlin.collections.get
 class NextflowLspCommandsSupport : LspCommandsSupport() {
 
     override fun executeCommand(server: LspServer, contextFile: VirtualFile, command: Command) {
-        if (command.command == "nextflow.previewDag") {
-            previewDag(server, command)
-        } else {
-            super.executeCommand(server, contextFile, command)
+        when (command.command) {
+            "nextflow.previewDag" -> previewDag(server, command)
+            "nextflow.previewConfig" -> showNextflowConfigPreview(server, command)
+            else -> super.executeCommand(server, contextFile, command)
         }
     }
 
@@ -46,7 +46,8 @@ class NextflowLspCommandsSupport : LspCommandsSupport() {
                 val result = server.sendRequestSync { languageServer ->
                     languageServer.workspaceService.executeCommand(
                         ExecuteCommandParams().apply {
-                            this.command = "nextflow.server.previewDag" //Note that there is a weird bug in the LSP, we have to change the command name to get this to work
+                            // Code lenses expose a client command; requests use the server command.
+                            this.command = "nextflow.server.previewDag"
                             this.arguments = command.arguments
                         }
                     )
