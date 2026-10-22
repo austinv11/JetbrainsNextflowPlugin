@@ -260,7 +260,9 @@ class NextflowConfigPreviewTest : BasePlatformTestCase() {
     private fun toggleProfile(list: CheckBoxList<String>, profile: String) {
         list.selectedIndex = (0 until list.model.size).single { list.getItemAt(it) == profile }
         val event = KeyEvent(list, KeyEvent.KEY_TYPED, System.currentTimeMillis(), 0, KeyEvent.VK_UNDEFINED, ' ')
-        list.keyListeners.forEach { it.keyTyped(event) }
+        // Exercise checkbox toggling, not Swing's look-and-feel shortcut handling,
+        // which queries a desktop-only modifier mask and fails on headless runners.
+        list.keyListeners.single { it.javaClass.enclosingClass == CheckBoxList::class.java }.keyTyped(event)
     }
 
     private inline fun <reified T : Throwable> expectFailure(action: () -> Any?): T {

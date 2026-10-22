@@ -54,7 +54,7 @@ To run the automated test suite:
 ./gradlew test
 ```
 
-Automated tests disable embedded Chromium to keep headless runs reliable. Check graphical DAG rendering in the sandbox IDE.
+Automated tests use AWT headless mode on every OS and disable embedded Chromium. Check graphical DAG rendering in the sandbox IDE.
 
 ## Credits / See Also
 

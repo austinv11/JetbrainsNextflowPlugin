@@ -126,6 +126,8 @@ tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
 
 tasks.test {
     useJUnitPlatform()
+    // Match Linux CI even when running tests from a desktop OS.
+    systemProperty("java.awt.headless", "true")
     // Browser rendering needs an interactive IDE; JCEF can hang headless test shutdown.
     systemProperty("ide.browser.jcef.enabled", "false")
     finalizedBy(tasks.jacocoTestReport)

@@ -77,6 +77,16 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: ./gradlew test jacocoTestReport
 
+      - name: Upload Test Failure Reports
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-failures-${{ matrix.os }}-java-${{ matrix.java }}
+          path: |
+            build/test-results/test/
+            build/reports/tests/test/
+          retention-days: 7
+
       - name: Upload JaCoCo XML Report
         if: always()
         uses: actions/upload-artifact@v4
