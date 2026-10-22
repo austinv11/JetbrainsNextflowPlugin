@@ -1,6 +1,7 @@
 package com.austinv11.nextflow
 
 import com.austinv11.nextflow.lsp.NextflowLspServerSupportProvider
+import com.austinv11.nextflow.lsp.NextflowLspVersion
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.fileChooser.FileChooserDescriptorFactory
 import com.intellij.openapi.options.BoundConfigurable
@@ -10,6 +11,7 @@ import com.intellij.openapi.progress.Task
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.DialogPanel
 import com.intellij.openapi.ui.Messages
+import com.intellij.openapi.ui.TextFieldWithBrowseButton
 import com.intellij.platform.lsp.api.LspServerManager
 import com.intellij.ui.dsl.builder.bindIntText
 import com.intellij.ui.dsl.builder.bindItem
@@ -25,6 +27,7 @@ class NextflowSettingsConfigurable(private val project: Project) : BoundConfigur
         val state = settings.state
         return panel {
             var execFieldText = ""
+            lateinit var customJarField: TextFieldWithBrowseButton
 
             group("Execution") {
                 row("Nextflow executable:") {
@@ -104,8 +107,13 @@ class NextflowSettingsConfigurable(private val project: Project) : BoundConfigur
                     ).bindText(
                         getter = { state.customLspJarPath },
                         setter = { state.customLspJarPath = it }
-                    ).comment("Path to a local <b>language-server-all.jar</b>. Leave empty to auto-download the latest release from GitHub.")
+                    ).apply { customJarField = component }
+                        .comment("Path to a local <b>language-server-all.jar</b>. Leave empty to use a managed server matching Nextflow Version.")
                 }
+                row {
+                    checkBox("Check for language-server updates daily")
+                        .bindSelected(state::checkLspUpdates)
+                }.rowComment("Updates are installed only after you choose Install update in the notification. Custom JARs are excluded.")
             }
 
             group("Diagnostics") {
@@ -129,6 +137,11 @@ class NextflowSettingsConfigurable(private val project: Project) : BoundConfigur
                             getter = { state.languageVersion },
                             setter = { state.languageVersion = it.trim() }
                         )
+                        .validationOnApply {
+                            if (customJarField.text.isBlank() && NextflowLspVersion.parse(it.text) == null) {
+                                error("Use a Nextflow release series such as 26.04 or 26.04.2.")
+                            } else null
+                        }
                     button("Detect") {
                         ProgressManager.getInstance().run(object : Task.Backgroundable(project, "Detecting Nextflow version", false) {
                             override fun run(indicator: ProgressIndicator) {
@@ -143,7 +156,7 @@ class NextflowSettingsConfigurable(private val project: Project) : BoundConfigur
                             }
                         })
                     }
-                }.rowComment("Language version used for analysis, e.g. <b>26.04</b>.")
+                }.rowComment("Selects the language-server release series, e.g. <b>26.04.x</b>. The newest stable patch is downloaded on first use; later updates require your approval. Ignored when a Custom JAR is set.")
             }
 
             group("Completion") {

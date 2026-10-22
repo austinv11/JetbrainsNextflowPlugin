@@ -5,6 +5,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- Download the Nextflow language server from official nextflow-io releases instead of the patched fork.
+- Match automatic language-server downloads to Nextflow Version and cache each server version separately, with a warning when falling back to a different cached version.
+- Store language-server downloads in the IDE system directory to avoid triggering development plugin reloads; reuse older plugin-directory caches without modifying them.
+- Reuse matching installed servers at startup and retry unexpectedly empty GitHub release lists.
+
+### Added
+- Daily language-server update checks with Install update and Dismiss actions, plus a manual check in the Tools menu. Updates stay within the selected Nextflow release series and leave custom JARs unchanged.
+
+### Fixed
+- Normalize Windows drive separators in language-server file URIs so hover and other requests match the server's indexed files.
+- Register the Nextflow file type without fixed extension associations so hover signatures and code snippets can be highlighted without a null PSI file.
+- Keep failed Nextflow executable probes at debug level and report a concise runtime-detection warning.
+- Remove unsupported editor metadata from the nf-core icon to avoid SVG renderer warnings.
 
 ## [1.1.3]
 

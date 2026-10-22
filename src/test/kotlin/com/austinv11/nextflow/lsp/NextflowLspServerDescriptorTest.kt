@@ -4,8 +4,48 @@ import com.austinv11.nextflow.NextflowSettings
 import com.google.gson.JsonObject
 import com.intellij.testFramework.fixtures.BasePlatformTestCase
 import org.eclipse.lsp4j.ConfigurationItem
+import java.io.File
 
 class NextflowLspServerDescriptorTest : BasePlatformTestCase() {
+    private lateinit var originalState: NextflowSettings.State
+
+    override fun setUp() {
+        super.setUp()
+        originalState = NextflowSettings.getInstance(project).state.copy()
+    }
+
+    override fun tearDown() {
+        try {
+            NextflowSettings.getInstance(project).loadState(originalState)
+        } finally {
+            super.tearDown()
+        }
+    }
+
+    fun testCustomJarBypassesInvalidLanguageVersionAndDownloads() {
+        val jar = File.createTempFile("nextflow-custom-", ".jar")
+        try {
+            val state = NextflowSettings.getInstance(project).state
+            state.customLspJarPath = jar.absolutePath
+            state.languageVersion = "not a release series"
+            state.javaHome = "/test/java"
+            val command = NextflowLspServerDescriptor(project).createCommandLine()
+            assertEquals("/test/java/bin/java", command.exePath.replace('\\', '/'))
+            assertEquals(listOf("-jar", jar.absolutePath), command.parametersList.list)
+        } finally {
+            jar.delete()
+        }
+    }
+
+    fun testMissingCustomJarDoesNotFallBackToAutomaticDownload() {
+        NextflowSettings.getInstance(project).state.customLspJarPath = "missing-nextflow-custom-server.jar"
+        try {
+            NextflowLspServerDescriptor(project).createCommandLine()
+            fail("Missing custom JAR must fail explicitly")
+        } catch (e: RuntimeException) {
+            assertTrue(e.message.orEmpty().contains("Custom Nextflow LSP JAR not found"))
+        }
+    }
 
     fun testWorkspaceConfigurationGeneratesCorrectly() {
         // Setup initial configuration

@@ -38,14 +38,16 @@ class NextflowLspServerDescriptor(project: Project) : ProjectWideLspServerDescri
         else -> super.getLanguageId(file)
     }
 
+    override fun getFileUri(file: VirtualFile): String = normalizeNextflowFileUri(super.getFileUri(file))
+
     override fun createCommandLine(): GeneralCommandLine {
-        val customPath = NextflowSettings.getInstance(project).state.customLspJarPath
+        val state = NextflowSettings.getInstance(project).state
+        val customPath = state.customLspJarPath
         val serverJar = if (customPath.isNotBlank()) {
-            File(customPath).takeIf { it.exists() }
+            File(customPath).takeIf { it.isFile }
                 ?: throw RuntimeException("Custom Nextflow LSP JAR not found: $customPath")
         } else {
-            NextflowLspServerDownloader.getOrDownloadLspServer()
-                ?: throw RuntimeException("Failed to locate or download Nextflow LSP server JAR")
+            NextflowLspServerDownloader.getOrDownloadLspServer(project, state.languageVersion)
         }
         val actualBin = NextflowEnvironmentUtils.getExecutableNextflowCommand(project)
         val env = mutableMapOf<String, String>()
@@ -170,3 +172,8 @@ class NextflowLspServerDescriptor(project: Project) : ProjectWideLspServerDescri
     override fun hashCode(): Int = project.hashCode()
 
 }
+
+// Keep the Windows drive separator identical to the URIs produced by the server's
+// filesystem scan. Decoding the rest of the path would corrupt escaped filenames.
+internal fun normalizeNextflowFileUri(uri: String): String =
+    uri.replaceFirst(Regex("^file:///([a-zA-Z])%3[aA]/"), "file:///\$1:/")

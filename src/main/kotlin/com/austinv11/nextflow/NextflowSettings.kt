@@ -27,6 +27,10 @@ class NextflowSettings : PersistentStateComponent<NextflowSettings.State> {
     data class State(
         // Server
         var customLspJarPath: String = "",
+        var checkLspUpdates: Boolean = true,
+        var lastLspUpdateCheck: Long = 0,
+        var lastLspUpdateSeries: String = "",
+        var dismissedLspUpdateVersion: String = "",
 
         // Execution
         var nextflowBinaryPath: String = "",
@@ -145,7 +149,7 @@ class NextflowSettings : PersistentStateComponent<NextflowSettings.State> {
                 }
                 version
             }.onFailure { throwable ->
-                logger.warn("Exception executing $commandStr: ${throwable.message}", throwable)
+                logger.debug("Could not execute $commandStr: ${throwable.message}", throwable)
             }.getOrNull()
 
             if (result != null) {
@@ -154,7 +158,7 @@ class NextflowSettings : PersistentStateComponent<NextflowSettings.State> {
             }
         }
 
-        logger.warn("detectInstalledVersion: Failed to detect Nextflow version after trying all methods")
+        logger.warn("Could not detect the Nextflow runtime using '$bin'. Configure its executable path in Nextflow settings. Language-server editor features remain available.")
         return null
     }
 
