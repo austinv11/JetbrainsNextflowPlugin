@@ -9,6 +9,7 @@ import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.editor.EditorFactory
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.ui.Messages
+import com.intellij.platform.lsp.api.LspServer
 import org.eclipse.lsp4j.ExecuteCommandParams
 
 class NextflowConvertScriptToTypedAction : AnAction() {
@@ -50,7 +51,7 @@ class NextflowConvertScriptToTypedAction : AnAction() {
         ApplicationManager.getApplication().executeOnPooledThread {
             try {
                 check(server.supportsNextflowCommand(command)) { "The connected language server no longer supports script conversion." }
-                server.sendRequestSync { languageServer ->
+                server.sendRequestSync(LspServer.DEFAULT_REQUEST_TIMEOUT_MS) { languageServer ->
                     languageServer.workspaceService.executeCommand(
                         ExecuteCommandParams().apply {
                             this.command = this@NextflowConvertScriptToTypedAction.command

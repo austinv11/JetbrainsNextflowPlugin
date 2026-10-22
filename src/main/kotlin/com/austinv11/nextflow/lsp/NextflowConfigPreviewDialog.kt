@@ -45,7 +45,7 @@ internal fun loadNextflowConfigPreview(server: LspServer, request: NextflowConfi
         LspServerManager.getInstance(server.project).getServersForProvider(NextflowLspServerSupportProvider::class.java)
             .firstOrNull { it.state == LspServerState.Running }
             ?: error("The language server is restarting. Try Refresh again once it is ready.")
-    val result = currentServer.sendRequestSync { languageServer ->
+    val result = currentServer.sendRequestSync(LspServer.DEFAULT_REQUEST_TIMEOUT_MS) { languageServer ->
         languageServer.workspaceService.executeCommand(request.toParams())
     }
     return NextflowConfigPreview.fromResponse(result)

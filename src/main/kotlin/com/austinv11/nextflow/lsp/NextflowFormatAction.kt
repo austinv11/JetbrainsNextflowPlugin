@@ -10,6 +10,7 @@ import com.intellij.openapi.command.WriteCommandAction
 import com.intellij.openapi.editor.Document
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.ui.Messages
+import com.intellij.platform.lsp.api.LspServer
 import com.intellij.platform.lsp.api.LspServerManager
 import com.intellij.platform.lsp.api.LspServerState
 import org.eclipse.lsp4j.DocumentFormattingParams
@@ -56,7 +57,7 @@ class NextflowFormatAction : AnAction() {
 
         ApplicationManager.getApplication().executeOnPooledThread {
             try {
-                val edits = server.sendRequestSync { languageServer ->
+                val edits = server.sendRequestSync(LspServer.DEFAULT_REQUEST_TIMEOUT_MS) { languageServer ->
                     languageServer.textDocumentService.formatting(
                         DocumentFormattingParams().apply {
                             textDocument = server.getDocumentIdentifier(file)

@@ -3,8 +3,7 @@ package com.austinv11.nextflow.nfcore
 import com.austinv11.nextflow.util.NextflowEnvironmentUtils
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.wm.ToolWindowManager
-import org.jetbrains.plugins.terminal.TerminalToolWindowManager
-import org.jetbrains.plugins.terminal.TerminalTabState
+import com.intellij.terminal.frontend.toolwindow.TerminalToolWindowTabsManager
 
 object NfCoreRunner {
     fun executeAction(project: Project, action: NfCoreAction) {
@@ -17,14 +16,12 @@ object NfCoreRunner {
         val command = "$actualBin ${args.joinToString(" ")}"
 
         try {
-            val terminalManager = TerminalToolWindowManager.getInstance(project)
-            val runner = terminalManager.terminalRunner
-            val tabState = TerminalTabState().apply {
-                myTabName = "nf-core: $displayName"
-                myWorkingDirectory = project.basePath
-            }
-            val widget = terminalManager.createLocalShellWidget(project.basePath, tabState.myTabName)
-            widget.executeCommand(command)
+            val tabBuilder = TerminalToolWindowTabsManager.getInstance(project).createTabBuilder()
+                .tabName("nf-core: $displayName")
+                .requestFocus(true)
+                .deferSessionStartUntilUiShown(true)
+            project.basePath?.let { tabBuilder.workingDirectory(it) }
+            tabBuilder.createTab().view.createSendTextBuilder().shouldExecute().send(command)
 
             val toolWindowManager = ToolWindowManager.getInstance(project)
             val terminalWindow = toolWindowManager.getToolWindow("Terminal")

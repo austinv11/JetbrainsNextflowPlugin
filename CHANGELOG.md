@@ -5,6 +5,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- Fix formatting, DAG and configuration previews, project refresh, and legacy conversion commands on newer 2026.1 IDEs by avoiding the removed LSP default-argument helper.
+- Replace the deprecated nf-core terminal creation API and read-action APIs while preserving the existing request timeout and file recognition behavior.
+
 ## [1.2.0]
 
 ### Changed

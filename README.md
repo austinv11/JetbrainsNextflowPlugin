@@ -56,6 +56,16 @@ To run the automated test suite:
 
 Automated tests use AWT headless mode on every OS and disable embedded Chromium. Check graphical DAG rendering in the sandbox IDE.
 
+### Checking IDE Compatibility
+Run binary compatibility checks against the development IDE (2026.1.1) and IDEA 2026.1.5:
+```bash
+./gradlew verifyPlugin
+```
+
+The first run downloads the verifier and the additional IDE. Reports appear in `build/reports/pluginVerifier/`. CI runs this check for pull requests and branch pushes; the release workflow also requires it before publishing.
+
+Pass LSP request timeouts explicitly. Omitting the timeout generates a Kotlin `$default` call that breaks when an IDE moves the method to a parent interface.
+
 ## Credits / See Also
 
 This plugin utilizes and integrates with the official Nextflow language server:

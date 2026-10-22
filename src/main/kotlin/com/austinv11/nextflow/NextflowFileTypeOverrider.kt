@@ -20,7 +20,7 @@ class NextflowFileTypeOverrider : FileTypeOverrider {
         if (NextflowFileUtils.isNextflowFile(file)) return NextflowFileType.INSTANCE
         if (file.extension != "config" || file.name == "nf-test.config") return null
 
-        val isPipelineConfig = ReadAction.compute<Boolean, RuntimeException> {
+        val isPipelineConfig = ReadAction.computeBlocking<Boolean, RuntimeException> {
             ProjectLocator.getInstance().getProjectsForFile(file).any { project ->
                 !project.isDisposed && NextflowFileUtils.isNextflowConfig(project, file)
             }

@@ -2,6 +2,7 @@ import groovy.json.JsonOutput
 import groovy.json.JsonSlurper
 import java.net.HttpURLConnection
 import java.net.URI
+import org.jetbrains.intellij.platform.gradle.IntelliJPlatformType
 
 plugins {
     id("java")
@@ -43,6 +44,7 @@ dependencies {
         testFramework(org.jetbrains.intellij.platform.gradle.TestFrameworkType.Platform)
     }
 
+    // Compile against the older API to retain support for early 2026.1 IDEs.
     compileOnly("com.jetbrains.intellij.platform:lsp:261.22158.277")
 
     testImplementation("junit:junit:4.13.2")
@@ -96,6 +98,13 @@ intellijPlatform {
         certificateChain.set(System.getenv("CERTIFICATE_CHAIN"))
         privateKey.set(System.getenv("PRIVATE_KEY"))
         password.set(System.getenv("PRIVATE_KEY_PASSWORD"))
+    }
+    pluginVerification {
+        ides {
+            current()
+            // LspServer methods moved to LspClient in later 2026.1 releases.
+            create(IntelliJPlatformType.IntellijIdea, "2026.1.5")
+        }
     }
 }
 

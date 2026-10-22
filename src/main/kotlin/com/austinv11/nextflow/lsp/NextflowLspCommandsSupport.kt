@@ -43,7 +43,7 @@ class NextflowLspCommandsSupport : LspCommandsSupport() {
         val project = server.project
         ApplicationManager.getApplication().executeOnPooledThread {
             try {
-                val result = server.sendRequestSync { languageServer ->
+                val result = server.sendRequestSync(LspServer.DEFAULT_REQUEST_TIMEOUT_MS) { languageServer ->
                     languageServer.workspaceService.executeCommand(
                         ExecuteCommandParams().apply {
                             // Code lenses expose a client command; requests use the server command.

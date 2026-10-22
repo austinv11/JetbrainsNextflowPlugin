@@ -10,7 +10,7 @@ import javax.swing.Icon
 class NextflowFileIconProvider : FileIconProvider {
     override fun getIcon(file: VirtualFile, flags: Int, project: Project?): Icon? {
         if (file.isDirectory || project == null || project.isDisposed) return null
-        return ReadAction.compute<Icon?, RuntimeException> {
+        return ReadAction.computeBlocking<Icon?, RuntimeException> {
             // Keep Nextflow icons even when TextMate supplies the file type and parser.
             if (NextflowFileUtils.isNextflowFile(file) || NextflowFileUtils.isNextflowConfig(project, file)) {
                 NextflowIcons.FILE
