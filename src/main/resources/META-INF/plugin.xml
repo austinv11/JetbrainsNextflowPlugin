@@ -12,6 +12,7 @@
         <!-- intellij.textmate must be listed explicitly so its module classloader
              is accessible — required for TextMateBundleProvider to resolve. -->
         <module name="intellij.textmate"/>
+        <module name="intellij.terminal.frontend"/>
         <module name="intellij.platform.lsp"/>
     </dependencies>
     <extensions defaultExtensionNs="com.intellij">
