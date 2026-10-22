@@ -20,9 +20,6 @@ import org.eclipse.lsp4j.DidChangeConfigurationParams
 import org.eclipse.lsp4j.InitializeResult
 import org.eclipse.lsp4j.InitializeParams
 import org.eclipse.lsp4j.MarkupKind
-import org.eclipse.lsp4j.SemanticTokensCapabilities
-import org.eclipse.lsp4j.SemanticTokensClientCapabilitiesRequests
-import org.eclipse.lsp4j.TokenFormat
 
 import java.io.File
 
@@ -86,13 +83,8 @@ class NextflowLspServerDescriptor(project: Project) : ProjectWideLspServerDescri
         hover.contentFormat = listOf(MarkupKind.MARKDOWN, MarkupKind.PLAINTEXT)
         textDocument.hover = hover
 
-        val semanticTokens = textDocument.semanticTokens ?: SemanticTokensCapabilities()
-        semanticTokens.requests = SemanticTokensClientCapabilitiesRequests().apply { setFull(true) }
-        semanticTokens.tokenTypes = emptyList()
-        semanticTokens.tokenModifiers = emptyList()
-        semanticTokens.formats = listOf(TokenFormat.Relative)
-        semanticTokens.augmentsSyntaxTokens = true
-        textDocument.semanticTokens = semanticTokens
+        // Preserve the IDE's supported tokens, request modes, and color mappings.
+        textDocument.semanticTokens?.augmentsSyntaxTokens = true
 
         capabilities.textDocument = textDocument
 
@@ -161,6 +153,7 @@ class NextflowLspServerDescriptor(project: Project) : ProjectWideLspServerDescri
     override val lspCustomization = object : LspCustomization() {
         override val commandsCustomizer = NextflowLspCommandsSupport()
         override val completionCustomizer = NextflowLspCompletionSupport()
+        override val semanticTokensCustomizer = NextflowLspSemanticTokensSupport()
     }
 
     override fun equals(other: Any?): Boolean {

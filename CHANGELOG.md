@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Daily language-server update checks with Install update and Dismiss actions, plus a manual check in the Tools menu. Updates stay within the selected Nextflow release series and leave custom JARs unchanged.
 
 ### Fixed
+- Preserve IntelliJ's semantic-token capabilities and request semantic highlighting for Nextflow scripts and configuration files alongside existing syntax highlighting.
 - Normalize Windows drive separators in language-server file URIs so hover and other requests match the server's indexed files.
 - Register the Nextflow file type without fixed extension associations so hover signatures and code snippets can be highlighted without a null PSI file.
 - Keep failed Nextflow executable probes at debug level and report a concise runtime-detection warning.
