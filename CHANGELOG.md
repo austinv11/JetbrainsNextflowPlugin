@@ -5,9 +5,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.1]
+
 ### Fixed
-- Fix formatting, DAG and configuration previews, project refresh, and legacy conversion commands on newer 2026.1 IDEs by avoiding the removed LSP default-argument helper.
-- Replace the deprecated nf-core terminal creation API and read-action APIs while preserving the existing request timeout and file recognition behavior.
+- Fix formatting, DAG and configuration previews, project refresh, and legacy conversion commands on IntelliJ IDEA 2026.1.5 by avoiding the removed LSP default-argument helper. Preserve support for earlier 2026.1 IDEs and the existing request timeout.
+- Run nf-core commands through the current terminal tab API instead of the deprecated terminal creation method, preserving tab names, project working directories, and Windows WSL handling.
+- Replace deprecated read-action APIs used for Nextflow file recognition and icons.
+
+### Added
+- Check binary compatibility with IntelliJ IDEA 2026.1.1 and 2026.1.5 in CI and before publishing a release.
 
 ## [1.2.0]
 
