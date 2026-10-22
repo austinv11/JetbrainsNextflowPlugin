@@ -7,13 +7,11 @@ import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.editor.EditorFactory
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.fileEditor.FileEditorManager
-import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.Messages
-import com.intellij.platform.lsp.api.LspServerManager
-import com.intellij.platform.lsp.api.LspServerState
 import org.eclipse.lsp4j.ExecuteCommandParams
 
 class NextflowConvertPipelineToTypedAction : AnAction() {
+    private val command = "nextflow.server.convertPipelineToTyped"
 
     override fun getActionUpdateThread(): ActionUpdateThread = ActionUpdateThread.BGT
 
@@ -23,21 +21,21 @@ class NextflowConvertPipelineToTypedAction : AnAction() {
             e.presentation.isEnabledAndVisible = false
             return
         }
-        val serverManager = LspServerManager.getInstance(project)
-        val hasRunningServer = serverManager.getServersForProvider(NextflowLspServerSupportProvider::class.java)
-            .any { it.state == LspServerState.Running }
-        e.presentation.isEnabledAndVisible = hasRunningServer
+        e.presentation.isEnabledAndVisible = findNextflowCommandServer(project, command) != null
     }
 
     override fun actionPerformed(e: AnActionEvent) {
         val project = e.project ?: return
         val basePath = project.basePath ?: return
+        if (findNextflowCommandServer(project, command) == null) return
 
         val dialog = NextflowConvertPipelineDialog(project, basePath)
         if (!dialog.showAndGet()) return
 
         val targetFolder = dialog.getSelectedFolder()
         if (targetFolder.isBlank()) return
+
+        val server = findNextflowCommandServer(project, command) ?: return
 
         // Flush unsaved changes so the server reads positions from the same content
         // that IntelliJ's in-memory documents hold. workspace/applyEdit positions
@@ -56,21 +54,13 @@ class NextflowConvertPipelineToTypedAction : AnAction() {
             }
         }
 
-        val serverManager = LspServerManager.getInstance(project)
-        val server = serverManager.getServersForProvider(NextflowLspServerSupportProvider::class.java)
-            .firstOrNull { it.state == LspServerState.Running }
-
-        if (server == null) {
-            Messages.showErrorDialog(project, "Nextflow LSP server is not running.", "Error")
-            return
-        }
-
         ApplicationManager.getApplication().executeOnPooledThread {
             try {
+                check(server.supportsNextflowCommand(command)) { "The connected language server no longer supports pipeline conversion." }
                 server.sendRequestSync { languageServer ->
                     languageServer.workspaceService.executeCommand(
                         ExecuteCommandParams().apply {
-                            this.command = "nextflow.server.convertPipelineToTyped"
+                            this.command = this@NextflowConvertPipelineToTypedAction.command
                             this.arguments = listOf(targetFolder)
                         }
                     )

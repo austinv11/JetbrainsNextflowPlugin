@@ -43,6 +43,20 @@ class NextflowLspServerCacheTest {
     }
 
     @Test
+    fun testOfficialJarIsSelectedAlongsideStandaloneBundles() {
+        val json = """[{
+            "tag_name":"v26.10.1",
+            "assets":[
+                {"name":"nextflow-language-server-26.10.1-linux-x64.tar.gz","browser_download_url":"native-linux"},
+                {"name":"nextflow-language-server-26.10.1-macos-arm64.tar.gz.sha256","browser_download_url":"checksum"},
+                {"name":"language-server-all.jar","browser_download_url":"https://github.com/nextflow-io/language-server/releases/download/v26.10.1/language-server-all.jar"}
+            ]
+        }]"""
+        val page = NextflowLspReleasePage.parse(json, false)
+        assertEquals(listOf(release("26.10.1", "https://github.com/nextflow-io/language-server/releases/download/v26.10.1/language-server-all.jar")), page.releases)
+    }
+
+    @Test
     fun testInvalidReleaseResponseFallsBackToCachedJar() {
         val expected = cachedJar("26.04.2")
         for (response in listOf("not json", "{\"message\":\"API error\"}", "[null]")) {

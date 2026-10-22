@@ -126,6 +126,8 @@ tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
 
 tasks.test {
     useJUnitPlatform()
+    // Browser rendering needs an interactive IDE; JCEF can hang headless test shutdown.
+    systemProperty("ide.browser.jcef.enabled", "false")
     finalizedBy(tasks.jacocoTestReport)
     extensions.configure(JacocoTaskExtension::class.java) {
         isIncludeNoLocationClasses = true

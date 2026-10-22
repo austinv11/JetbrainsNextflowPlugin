@@ -13,7 +13,7 @@ This plugin provides enhanced support for Nextflow within JetBrains environments
 * **Official Nextflow Language Server Support**: Real-time code completion, parameter hints, hover documentation, and error checking directly integrated via the official Nextflow Language Server Protocol (LSP).
 * **Native Run & Debug Configurations**: Effortlessly create, execute, and remote-debug your Nextflow pipelines directly from the IDE. Includes full support for Windows Subsystem for Linux (WSL). Note that debugging only works on IntelliJ IDEA.
 * **Official Syntax Highlighting**: Highlights Nextflow-specific syntax (like processes, workflows, channels, and operators) via official TextMate bundle integration.
-* **Code Actions & Refactoring**: Utilize LSP-powered formatting and specialized actions to convert legacy scripts and pipelines to static types.
+* **Code Actions & Refactoring**: Use LSP-powered formatting and code actions. Static-type conversion actions appear only when the connected language server supports them; newer servers have removed these commands.
 * **Process Configuration Previews**: Click **Preview config** above a process to inspect directive values, their source files, and overridden settings. Select profiles from the searchable checkbox popup to update the preview automatically; use **Refresh** after configuration changes.
 * **File Templates**: Quickly bootstrap your projects with built-in templates for `.nf`, `.nf.test`, and `nextflow.config` files.
 * **Interactive Nextflow Console**: Launch an interactive REPL console to test Nextflow logic directly within the IDE.
@@ -53,6 +53,8 @@ To run the automated test suite:
 ```bash
 ./gradlew test
 ```
+
+Automated tests disable embedded Chromium to keep headless runs reliable. Check graphical DAG rendering in the sandbox IDE.
 
 ## Credits / See Also
 

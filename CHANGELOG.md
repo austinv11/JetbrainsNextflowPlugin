@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - Download the Nextflow language server from official nextflow-io releases instead of the patched fork.
-- Match automatic language-server downloads to Nextflow Version and cache each server version separately, with a warning when falling back to a different cached version.
+- Match automatic language-server downloads to the selected Nextflow version and cache each server version separately, with a warning when falling back to a different cached version.
 - Store language-server downloads in the IDE system directory to avoid triggering development plugin reloads; reuse older plugin-directory caches without modifying them.
 - Reuse matching installed servers at startup and retry unexpectedly empty GitHub release lists.
 
@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Daily language-server update checks with Install update and Dismiss actions, plus a manual check in the Tools menu. Updates stay within the selected Nextflow release series and leave custom JARs unchanged.
 
 ### Fixed
+- Hide static-type conversion actions when the connected server no longer advertises the removed conversion commands, while preserving compatibility with older servers that support them.
 - Disable development sandbox plugin hot reloads that can unload Nextflow support and leave scripts and configs unrecognized until restart.
 - Prevent language-server string colors from overriding embedded Bash highlighting after semantic tokens arrive; retain semantic colors for other token types.
 - Restore Bash syntax highlighting and Nextflow interpolation throughout triple-quoted process scripts in TextMate fallback mode, including long pipelines and indented closing quotes.
@@ -43,16 +44,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Made groovy inspections optional when outside of IntelliJ
 - Made debug configurations dependent on IntelliJ (It requires the Java Debugger)
 
-
-## [1.1.0]
-
-### Added
-- Add a plugin thumbnail icon
-- Better support for non-IntelliJ IDEs (like PyCharm, WebStorm, etc.)
-
-### Changed
-- Made groovy inspections optional when outside of IntelliJ
-- Made debug configurations dependent on IntelliJ (It requires the Java Debugger)
 
 ## [1.0.3]
 
