@@ -11,6 +11,23 @@ import com.intellij.psi.PsiFileFactory
 import com.intellij.testFramework.fixtures.BasePlatformTestCase
 
 class NextflowLspSemanticTokensSupportTest : BasePlatformTestCase() {
+    fun testSemanticStringsDoNotOverrideEmbeddedSyntaxColors() {
+        for (modifiers in listOf(emptyList(), listOf("declaration"), listOf("readonly"))) {
+            assertNull("String coloring must remain with the syntax highlighter", support().getTextAttributesKey("string", modifiers))
+        }
+    }
+
+    fun testOtherSemanticColorsRetainPlatformMappings() {
+        val platform = LspSemanticTokensSupport()
+        val actual = support()
+        for (type in platform.tokenTypes.filter { it != "string" }) {
+            for (modifiers in listOf(emptyList(), listOf("static"), listOf("defaultLibrary"))) {
+                assertEquals("Preserve the platform mapping for $type with $modifiers",
+                    platform.getTextAttributesKey(type, modifiers), actual.getTextAttributesKey(type, modifiers))
+            }
+        }
+    }
+
     fun testInitializationPreservesPlatformSemanticTokenCapabilities() {
         val platform = object : ProjectWideLspServerDescriptor(project, "Platform defaults") {
             override val lspCustomization = LspCustomization()

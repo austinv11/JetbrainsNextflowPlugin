@@ -17,6 +17,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Daily language-server update checks with Install update and Dismiss actions, plus a manual check in the Tools menu. Updates stay within the selected Nextflow release series and leave custom JARs unchanged.
 
 ### Fixed
+- Prevent language-server string colors from overriding embedded Bash highlighting after semantic tokens arrive; retain semantic colors for other token types.
+- Restore Bash syntax highlighting and Nextflow interpolation throughout triple-quoted process scripts in TextMate fallback mode, including long pipelines and indented closing quotes.
 - Recognize included pipeline configs as Nextflow files and show Nextflow icons with either the native parser or TextMate fallback.
 - Preserve IntelliJ's semantic-token capabilities and request semantic highlighting for Nextflow scripts and configuration files alongside existing syntax highlighting.
 - Normalize Windows drive separators in language-server file URIs so hover and other requests match the server's indexed files.
