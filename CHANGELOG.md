@@ -5,6 +5,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.0]
+
 ### Changed
 - Download the Nextflow language server from official nextflow-io releases instead of the patched fork.
 - Match automatic language-server downloads to the selected Nextflow version and cache each server version separately, with a warning when falling back to a different cached version.
